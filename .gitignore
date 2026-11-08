@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv/
+artifacts/*.joblib
+artifacts/*.db
+artifacts/*.json
+chroma/
+.mlruns/
+mlruns/
+.pytest_cache/
+.DS_Store
+data/raw/.dvc/cache

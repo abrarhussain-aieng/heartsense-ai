@@ -1,0 +1,38 @@
+# Core ML
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+joblib>=1.4
+
+# DVC + DagsHub
+dvc>=3.50
+dagshub>=0.5
+mlflow>=2.17
+
+# API
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.8
+pydantic-settings>=2.4
+python-multipart>=0.0.9
+httpx>=0.27
+
+# LLM / RAG
+langchain>=0.3
+langchain-google-genai>=4.0
+langchain-groq>=0.2
+langchain-community>=0.3
+chromadb>=0.5
+langchain-chroma>=0.1
+langgraph>=0.2
+langchain-mcp-adapters>=0.1
+mcp>=1.27
+
+# Guardrails / Evals
+nemoguardrails>=0.10
+ragas>=0.2
+langsmith>=0.1
+
+# Observability / Tests
+pytest>=8.3
+pytest-asyncio>=0.24

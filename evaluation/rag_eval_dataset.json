@@ -1,0 +1,5 @@
+[
+  {"question": "What are common risk factors for heart disease?", "ground_truth": "High blood pressure, high LDL cholesterol, smoking, diabetes, obesity."},
+  {"question": "How can high cholesterol be managed?", "ground_truth": "Balanced diet, exercise, and medication when prescribed."},
+  {"question": "What is a normal blood pressure range?", "ground_truth": "Around 120/80 mmHg is considered normal for most adults."}
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "who-cvd",
+    "title": "World Health Organization — Cardiovascular diseases (CVDs)",
+    "url": "https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds)",
+    "content": "Cardiovascular diseases (CVDs) are the leading cause of death globally. Risk factors include unhealthy diet, physical inactivity, tobacco use, and harmful use of alcohol. Early detection through regular blood pressure and cholesterol screening supports prevention."
+  },
+  {
+    "id": "cdc-heart",
+    "title": "CDC — Heart Disease",
+    "url": "https://www.cdc.gov/heart-disease/about/index.html",
+    "content": "Coronary artery disease is the most common type of heart disease. High blood pressure, high LDL cholesterol, diabetes, smoking, and obesity are key risk factors. Healthy lifestyle changes reduce risk."
+  },
+  {
+    "id": "nhs-cholesterol",
+    "title": "NHS — High cholesterol",
+    "url": "https://www.nhs.uk/conditions/high-cholesterol/",
+    "content": "High cholesterol can increase the risk of heart disease. A balanced diet, regular exercise, and in some cases medication help manage cholesterol levels. Regular screening is recommended for adults."
+  },
+  {
+    "id": "aha-hbp",
+    "title": "American Heart Association — High blood pressure",
+    "url": "https://www.heart.org/en/health-topics/high-blood-pressure",
+    "content": "High blood pressure often has no symptoms. Regular monitoring, reducing sodium intake, physical activity, and medication when prescribed help control blood pressure."
+  },
+  {
+    "id": "esc-prevention",
+    "title": "European Society of Cardiology — Prevention of CVD",
+    "url": "https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines",
+    "content": "Prevention of cardiovascular disease focuses on managing blood pressure, lipids, blood sugar, smoking, diet, and physical activity. Risk stratification supports personalized prevention."
+  }
+]

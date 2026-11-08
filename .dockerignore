@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.env.*
+__pycache__
+*.pyc
+.pytest_cache
+tests
+notebooks
+chroma
+data/raw/.dvc

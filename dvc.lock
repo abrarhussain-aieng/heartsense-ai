@@ -1,0 +1,37 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python -m heartsense.train
+    deps:
+    - path: data/raw/heart.csv
+      hash: md5
+      md5: ab21f2524241ed14b321bcaf40c8b86e
+      size: 35921
+    - path: src/heartsense/config.py
+      hash: md5
+      md5: 43fa666360ac6ae42ae05335f2399bec
+      size: 832
+    - path: src/heartsense/data.py
+      hash: md5
+      md5: e69910128bcf687d710e050b495f482c
+      size: 801
+    - path: src/heartsense/train.py
+      hash: md5
+      md5: 918548d5e984f0073b3c507efb8bae83
+      size: 3437
+    params:
+      params.yaml:
+        data.random_state: 42
+        data.test_size: 0.2
+        mlflow.experiment: heartsense-heart-disease
+        model.cv_folds: 5
+        model.n_iter: 30
+    outs:
+    - path: artifacts/heart_disease_pipeline.joblib
+      hash: md5
+      md5: 69cda14e45f77f64a0515a9a0091f4e6
+      size: 798971
+    - path: artifacts/metrics.json
+      hash: md5
+      md5: f50be404d01f7ee0752654149bff712d
+      size: 206

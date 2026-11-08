@@ -1,0 +1,19 @@
+stages:
+  train:
+    cmd: python -m heartsense.train
+    deps:
+      - data/raw/heart.csv
+      - src/heartsense/data.py
+      - src/heartsense/train.py
+      - src/heartsense/config.py
+    params:
+      - data.test_size
+      - data.random_state
+      - model.n_iter
+      - model.cv_folds
+      - mlflow.experiment
+    outs:
+      - artifacts/heart_disease_pipeline.joblib
+    metrics:
+      - artifacts/metrics.json:
+          cache: false

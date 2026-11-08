@@ -1,0 +1,12 @@
+data:
+  raw_path: data/raw/heart.csv
+  test_size: 0.2
+  random_state: 42
+
+model:
+  n_iter: 30
+  cv_folds: 5
+  scoring: roc_auc
+
+mlflow:
+  experiment: heartsense-heart-disease
