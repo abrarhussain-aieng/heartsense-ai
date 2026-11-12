@@ -1,3 +1,40 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: latest
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.3
       env:
@@ -12,42 +49,32 @@
         key: ${{ secrets.EC2_SSH_KEY }}
         envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, ECR_REGISTRY, ECR_REPOSITORY
         script: |
-          # 1. Create the docker-compose.prod.yml file on the server
-          cat > /home/ubuntu/docker-compose.prod.yml << 'EOF'
-          services:
-            api:
-              image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
-              container_name: heartsense-api
-              ports:
-                - "80:8000"
-              env_file:
-                - .env
-              volumes:
-                - ./artifacts:/app/artifacts
-                - ./chroma:/app/chroma
-              depends_on:
-                - mcp
-              restart: unless-stopped
-
-            mcp:
-              image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
-              container_name: heartsense-mcp
-              command: python -m mcp_server.server
-              ports:
-                - "8001:8001"
-              env_file:
-                - .env
-              volumes:
-                - ./artifacts:/app/artifacts
-                - ./chroma:/app/chroma
-              restart: unless-stopped
-          EOF
-
-          # 2. Login to ECR and pull the latest image
+          # 1. Authenticate Docker with ECR
           aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+          
+          # 2. Pull the latest image
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-          # 3. Restart the services
-          cd /home/ubuntu
-          docker compose -f docker-compose.prod.yml down || true
-          docker compose -f docker-compose.prod.yml up -d
+          
+          # 3. Stop and remove old containers
+          docker stop heartsense-api heartsense-mcp || true
+          docker rm heartsense-api heartsense-mcp || true
+          
+          # 4. Start the API container
+          docker run -d \
+            --name heartsense-api \
+            --restart unless-stopped \
+            -p 80:8000 \
+            --env-file /home/ubuntu/.env \
+            -v /home/ubuntu/artifacts:/app/artifacts \
+            -v /home/ubuntu/chroma:/app/chroma \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            
+          # 5. Start the MCP container
+          docker run -d \
+            --name heartsense-mcp \
+            --restart unless-stopped \
+            -p 8001:8001 \
+            --env-file /home/ubuntu/.env \
+            -v /home/ubuntu/artifacts:/app/artifacts \
+            -v /home/ubuntu/chroma:/app/chroma \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server
