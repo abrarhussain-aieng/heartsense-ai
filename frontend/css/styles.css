@@ -645,3 +645,24 @@ form button[type="submit"]:hover {
   margin-bottom: 10px;
   min-height: 20px;
 }
+
+/* FIX FOR LOGIN FORM LAYOUT */
+#auth-form {
+  display: flex;
+  flex-direction: column;
+  /* Stack vertically instead of horizontally */
+  gap: 15px;
+}
+
+#auth-form input {
+  width: 100%;
+  box-sizing: border-box;
+  /* Ensures padding doesn't break the width */
+  margin-bottom: 0;
+  /* Removes old margin since gap handles spacing */
+}
+
+#auth-form button {
+  width: 100%;
+  margin-top: 5px;
+}
