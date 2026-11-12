@@ -5,38 +5,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HeartSense AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
 </head>
 
 <body>
-  <!-- Centered Login Overlay (Moved inside <body>) -->
-  <div id="auth-overlay"
-    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #0f172a; z-index: 9999;">
-    <div class="auth-box"
-      style="background-color: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; color: #e2e8f0;">
-      <h2 id="auth-title" style="text-align: center; margin-bottom: 1rem; color: #fff;">Welcome Back</h2>
-      <p id="auth-error"
-        style="color: #f87171; font-size: 14px; text-align: center; margin-bottom: 1rem; min-height: 20px;"></p>
-
+  <!-- LOGIN OVERLAY -->
+  <div id="auth-overlay">
+    <div class="auth-box">
+      <h2 id="auth-title">Welcome Back</h2>
+      <p id="auth-error"></p>
       <form id="auth-form">
-        <div id="name-group" style="display: none; margin-bottom: 15px;">
-          <input type="text" id="auth-name" placeholder="Full Name"
-            style="width: 100%; padding: 12px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
+        <div id="name-group" style="display: none;">
+          <input type="text" id="auth-name" placeholder="Full Name" />
         </div>
-
-        <input type="email" id="auth-email" placeholder="Email Address" required
-          style="width: 100%; padding: 12px; margin-bottom: 15px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
-        <input type="password" id="auth-password" placeholder="Password" required
-          style="width: 100%; padding: 12px; margin-bottom: 15px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
-
-        <button type="submit" id="auth-submit-btn" class="primary"
-          style="width: 100%; padding: 12px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Login</button>
+        <input type="email" id="auth-email" placeholder="Email Address" required />
+        <input type="password" id="auth-password" placeholder="Password" required />
+        <button type="submit" id="auth-submit-btn" class="btn-primary">Login</button>
       </form>
-
-      <p style="text-align: center; margin-top: 15px; font-size: 14px; color: #94a3b8;">
+      <p class="auth-toggle">
         <span id="auth-toggle-text">Don't have an account?</span>
-        <a href="#" id="auth-toggle-link" style="color: #3b82f6; text-decoration: none;">Sign up</a>
+        <a href="#" id="auth-toggle-link">Sign up</a>
       </p>
     </div>
   </div>
@@ -44,29 +34,33 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
-      <span style="font-size: 28px;">🫀</span>
+      <div class="logo-icon"><i class="fa-solid fa-heart-pulse"></i></div>
       <div>
-        <h2 style="margin:0; font-size: 18px;">HeartSense AI</h2>
-        <p style="margin:0; font-size: 10px; color: var(--muted);">Smart Health Insights</p>
+        <h2>HeartSense AI</h2>
+        <p>Smart Health Insights</p>
       </div>
     </div>
     <nav id="nav">
-      <a href="#dashboard" data-page="dashboard" class="active">📊 Dashboard</a>
-      <a href="#analytics" data-page="analytics">📈 Analytics</a>
-      <a href="#predict" data-page="predict">🩺 Predictions</a>
-      <a href="#assistant" data-page="assistant">🤖 Ask AI Agent</a>
-      <a href="#reports" data-page="reports">📄 Reports</a>
-      <a href="#monitoring" data-page="monitoring">⚙️ Model Monitoring</a>
+      <a href="#dashboard" data-page="dashboard" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="#analytics" data-page="analytics"><i class="fa-solid fa-chart-simple"></i> Analytics</a>
+      <a href="#predict" data-page="predict"><i class="fa-solid fa-stethoscope"></i> Predictions</a>
+      <a href="#assistant" data-page="assistant"><i class="fa-solid fa-robot"></i> Ask AI Agent</a>
+      <a href="#voice" data-page="voice"><i class="fa-solid fa-microphone"></i> Voice Agent</a>
+      <a href="#reports" data-page="reports"><i class="fa-solid fa-file-medical"></i> Reports</a>
+      <a href="#monitoring" data-page="monitoring"><i class="fa-solid fa-gear"></i> Model Monitoring</a>
     </nav>
     <div class="sidebar-bottom">
-      <div class="promo-card" style="text-align: center; display: flex; justify-content: center; align-items: center;">
-        <h4 style="margin:0; color:#fff;">🚀 Smarter Health.<br>A Healthier You.</h4>
+      <div class="promo-card">
+        <i class="fa-solid fa-rocket"></i>
+        <h4>Smarter Health.<br>A Healthier You.</h4>
       </div>
-      <div class="user-profile">
+      <!-- UPDATED USER PROFILE WITH LOGOUT -->
+      <div class="user-profile" onclick="localStorage.removeItem('token'); window.location.reload();"
+        style="cursor: pointer;" title="Click to Logout">
         <div class="avatar">A</div>
         <div>
-          <p style="margin:0; font-weight:600;">Abrar Hussain</p>
-          <p style="margin:0; font-size:12px; color:#eab308;">Premium User</p>
+          <p>Abrar Hussain</p>
+          <p>Premium User (Logout)</p>
         </div>
       </div>
     </div>
@@ -74,62 +68,142 @@
 
   <!-- MAIN CONTENT -->
   <main class="main">
-    <header class="topbar" style="justify-content: flex-end;">
+    <header class="topbar">
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search anything... (e.g. &quot;Why is my risk high?&quot;)">
+        <span class="kbd">Ctrl + K</span>
+      </div>
       <div class="top-actions">
-        <button id="theme-toggle" style="font-size: 20px;">🌙</button>
+        <button id="theme-toggle"><i class="fa-solid fa-moon"></i></button>
+        <button class="notification-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
       </div>
     </header>
 
     <div class="content-scroll">
+      <!-- DASHBOARD PAGE -->
       <section id="page-dashboard" class="page active">
-        <h1 class="greeting">Welcome back, <span class="highlight">Abrar!</span> 👋</h1>
-        <p class="subtitle">Here's your health overview and AI insights.</p>
-
-        <div class="cards-grid">
-          <div class="card glass-card risk">
-            <div class="card-icon">❤️</div>
-            <h3>Heart Risk</h3>
-            <p id="risk-value" class="value text-green">Low Risk</p>
-            <p class="trend" style="color:#10b981;">✅ Good News!</p>
+        <div class="header-section">
+          <div>
+            <h1 class="greeting">Welcome back, <span class="highlight">Abrar!</span> 👋</h1>
+            <p class="subtitle">Here's your health overview and AI insights.</p>
           </div>
-          <div class="card glass-card acc">
-            <div class="card-icon">📊</div>
-            <h3>Model Accuracy</h3>
-            <p id="acc-value" class="value">—</p>
-          </div>
-          <div class="card glass-card total">
-            <div class="card-icon">👥</div>
-            <h3>Total Analysis</h3>
-            <p id="total-value" class="value">—</p>
-          </div>
-          <div class="card glass-card score">
-            <div class="card-icon">🛡️</div>
-            <h3>Health Score</h3>
-            <p id="score-value" class="value">—</p>
+          <div class="header-graphic">
+            <svg viewBox="0 0 200 50" class="pulse-line">
+              <path d="M0,25 L40,25 L45,10 L55,40 L65,15 L75,25 L200,25" fill="none" stroke="#3b82f6"
+                stroke-width="2" />
+            </svg>
           </div>
         </div>
 
-        <div class="dashboard-layout">
-          <div class="chart-section glass-panel">
-            <h2>Your Health Analytics</h2>
+        <!-- KPI CARDS -->
+        <div class="cards-grid">
+          <div class="kpi-card c-blue">
+            <div class="kpi-icon"><i class="fa-solid fa-heart"></i></div>
+            <div class="kpi-content">
+              <h3>Heart Risk</h3>
+              <p class="value" id="risk-value">Low Risk</p>
+              <p class="trend text-green"><i class="fa-solid fa-check"></i> Good News!</p>
+            </div>
+          </div>
+          <div class="kpi-card c-purple">
+            <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-content">
+              <h3>Accuracy</h3>
+              <p class="value" id="acc-value">—</p>
+              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> +1.2%</p>
+            </div>
+          </div>
+          <div class="kpi-card c-green">
+            <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="kpi-content">
+              <h3>Total Analysis</h3>
+              <p class="value" id="total-value">—</p>
+              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> +12%</p>
+            </div>
+          </div>
+          <div class="kpi-card c-orange">
+            <div class="kpi-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="kpi-content">
+              <h3>Health Score</h3>
+              <p class="value" id="score-value">—</p>
+              <p class="trend" style="color: #fbbf24;"><i class="fa-solid fa-star"></i> Excellent!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MIDDLE ROW -->
+        <div class="middle-grid">
+          <div class="glass-panel chart-panel">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-chart-column" style="color: #8b5cf6;"></i> Your Health Analytics</h2>
+              <select class="time-select">
+                <option>Last 6 Months</option>
+              </select>
+            </div>
             <div class="chart-container">
               <canvas id="healthChart"></canvas>
             </div>
           </div>
-          <div class="assistant-panel glass-panel">
-            <h2>✨ AI Agent <span class="online">Online</span></h2>
-            <div id="chat-window">
+
+          <div class="glass-panel ai-panel">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #8b5cf6;"></i> AI Agent <span
+                  class="status-online">Online</span></h2>
+            </div>
+            <div id="chat-window" class="chat-window">
               <div class="msg bot">Hello Abrar! Ask me anything about your heart health.</div>
             </div>
-            <form id="chat-form" style="display: flex; gap: 8px;">
-              <input id="chat-input" placeholder="Ask anything..." style="flex:1;" />
-              <button type="button" id="mic-btn" class="mic-btn">🎤</button>
-              <button type="submit">Send</button>
+            <form id="chat-form" class="chat-input-area">
+              <input id="chat-input" placeholder="Ask anything about your health..." />
+              <button type="button" id="mic-btn" class="mic-btn"><i class="fa-solid fa-microphone"></i></button>
+              <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
             </form>
+          </div>
+        </div>
+
+        <!-- BOTTOM ROW -->
+        <div class="bottom-grid">
+          <div class="glass-panel dist-panel">
+            <h2>Risk Distribution</h2>
+            <div class="dist-content">
+              <div class="chart-container" style="height: 150px; width: 150px;">
+                <canvas id="riskChart"></canvas>
+              </div>
+              <div class="dist-legend">
+                <p><span class="dot green"></span> Low Risk</p>
+                <p><span class="dot yellow"></span> Medium Risk</p>
+                <p><span class="dot red"></span> High Risk</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel actions-panel">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+              <button class="action-btn" onclick="location.hash='#reports'"><i
+                  class="fa-solid fa-cloud-arrow-up c-blue-bg"></i>Upload Report</button>
+              <button class="action-btn" onclick="location.hash='#analytics'"><i
+                  class="fa-solid fa-chart-pie c-purple-bg"></i>View Details</button>
+              <button class="action-btn" onclick="location.hash='#assistant'"><i
+                  class="fa-solid fa-lightbulb c-green-bg"></i>Get Recommendations</button>
+              <button class="action-btn" onclick="location.hash='#predict'"><i
+                  class="fa-solid fa-heart-pulse c-orange-bg"></i>Health Tips</button>
+            </div>
+          </div>
+
+          <div class="glass-panel voice-panel">
+            <h2>Voice Agent</h2>
+            <p style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">Tap to speak with
+              your AI assistant</p>
+            <div class="waveform"></div>
+            <button class="mic-large" id="mic-btn-voice"><i class="fa-solid fa-microphone"></i></button>
+            <p style="text-align: center; color: var(--muted); font-size: 12px; margin-top: 15px;">Click to talk</p>
           </div>
         </div>
       </section>
 
+      <!-- OTHER PAGES (Hidden by default) -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
         <form id="predict-form" class="glass-panel form-grid">
@@ -166,7 +240,7 @@
               <option>Flat</option>
               <option>Down</option>
             </select></label>
-          <button type="submit" class="primary" style="grid-column: span 3;">Predict Risk</button>
+          <button type="submit" class="btn-primary" style="grid-column: span 3;">Predict Risk</button>
         </form>
         <div id="predict-result" class="result-card glass-panel"></div>
       </section>
@@ -174,11 +248,11 @@
       <section id="page-assistant" class="page">
         <h1>🤖 AI Agent</h1>
         <section class="assistant glass-panel">
-          <div id="chat-window-2"></div>
-          <form id="chat-form-2" style="display: flex; gap: 8px;">
-            <input id="chat-input-2" placeholder="Ask about your heart health..." style="flex:1;" />
-            <button type="button" id="mic-btn-2" class="mic-btn">🎤</button>
-            <button type="submit">Send</button>
+          <div id="chat-window-2" style="height: 400px; overflow-y: auto; margin-bottom: 20px;"></div>
+          <form id="chat-form-2" class="chat-input-area">
+            <input id="chat-input-2" placeholder="Ask about your heart health..." />
+            <button type="button" id="mic-btn-2" class="mic-btn"><i class="fa-solid fa-microphone"></i></button>
+            <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
           </form>
         </section>
       </section>
@@ -196,7 +270,7 @@
         <h1>📄 Reports</h1>
         <form id="report-form" class="glass-panel">
           <label>Patient ID <input name="patient_id" required></label>
-          <button type="submit" class="primary">Download Report File</button>
+          <button type="submit" class="btn-primary">Download Report File</button>
         </form>
         <pre id="report-output"></pre>
       </section>
@@ -204,6 +278,11 @@
       <section id="page-monitoring" class="page">
         <h1>📊 Model Monitoring</h1>
         <div id="monitoring-output" class="glass-panel">Loading...</div>
+      </section>
+
+      <section id="page-voice" class="page">
+        <h1>Voice Agent</h1>
+        <p>Coming soon...</p>
       </section>
     </div>
   </main>
