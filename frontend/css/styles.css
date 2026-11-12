@@ -648,7 +648,7 @@ form button[type="submit"]:hover {
   margin-top: 5px;
 }
 
-/* PASSWORD VISIBILITY TOGGLE (SIDE ALIGNED) */
+/* FIX FOR PASSWORD VISIBILITY TOGGLE */
 .password-container {
   display: flex;
   align-items: center;
@@ -657,7 +657,6 @@ form button[type="submit"]:hover {
   border: 1px solid var(--glass-border);
   border-radius: 10px;
   margin-bottom: 15px;
-  /* Matches the other inputs */
   transition: border 0.3s;
 }
 
@@ -668,34 +667,47 @@ form button[type="submit"]:hover {
 
 .password-container input {
   flex: 1;
+  width: 100%;
   border: none !important;
   background: transparent !important;
-  border-radius: 0;
-  margin-bottom: 0;
-  padding: 12px;
+  padding: 12px 16px;
   color: var(--text);
   outline: none;
+  box-sizing: border-box;
 }
 
-.password-toggle {
-  background: transparent;
-  border: none;
-  padding: 0 15px;
-  cursor: pointer;
+/* Make sure placeholder is visible */
+#auth-form input::placeholder,
+.password-container input::placeholder {
   color: var(--muted);
+}
+
+/* Target the button specifically to override the 100% width */
+.password-container .password-toggle {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 15px !important;
+  margin: 0 !important;
+  width: auto !important;
+  /* Forces it to shrink to icon size */
+  height: auto !important;
+  flex-shrink: 0;
+  /* Prevents it from stretching */
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  transition: color 0.2s;
+  cursor: pointer;
+  color: var(--muted);
+  box-shadow: none !important;
 }
 
-.password-toggle:hover {
-  background: transparent;
+.password-container .password-toggle:hover {
   color: var(--text);
+  background: transparent !important;
 }
 
-.password-toggle svg {
+.password-container .password-toggle svg {
   pointer-events: none;
-  /* Prevents SVG from capturing the click */
+  width: 20px;
+  height: 20px;
 }
