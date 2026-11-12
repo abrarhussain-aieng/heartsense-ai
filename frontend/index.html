@@ -10,6 +10,37 @@
 </head>
 
 <body>
+  <!-- Centered Login Overlay (Moved inside <body>) -->
+  <div id="auth-overlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #0f172a; z-index: 9999;">
+    <div class="auth-box"
+      style="background-color: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; color: #e2e8f0;">
+      <h2 id="auth-title" style="text-align: center; margin-bottom: 1rem; color: #fff;">Welcome Back</h2>
+      <p id="auth-error"
+        style="color: #f87171; font-size: 14px; text-align: center; margin-bottom: 1rem; min-height: 20px;"></p>
+
+      <form id="auth-form">
+        <div id="name-group" style="display: none; margin-bottom: 15px;">
+          <input type="text" id="auth-name" placeholder="Full Name"
+            style="width: 100%; padding: 12px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
+        </div>
+
+        <input type="email" id="auth-email" placeholder="Email Address" required
+          style="width: 100%; padding: 12px; margin-bottom: 15px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
+        <input type="password" id="auth-password" placeholder="Password" required
+          style="width: 100%; padding: 12px; margin-bottom: 15px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white;" />
+
+        <button type="submit" id="auth-submit-btn" class="primary"
+          style="width: 100%; padding: 12px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Login</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 15px; font-size: 14px; color: #94a3b8;">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <a href="#" id="auth-toggle-link" style="color: #3b82f6; text-decoration: none;">Sign up</a>
+      </p>
+    </div>
+  </div>
+
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
@@ -41,7 +72,7 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT (Kept exactly as provided) -->
+  <!-- MAIN CONTENT -->
   <main class="main">
     <header class="topbar" style="justify-content: flex-end;">
       <div class="top-actions">

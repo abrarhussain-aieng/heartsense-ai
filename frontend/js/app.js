@@ -1,6 +1,84 @@
 document.addEventListener("DOMContentLoaded", () => {
   
-  // --- 1. THEME SWITCHER ---
+  // --- 1. AUTHENTICATION LOGIC ---
+  const authOverlay = document.getElementById("auth-overlay");
+  const authForm = document.getElementById("auth-form");
+  const authTitle = document.getElementById("auth-title");
+  const authError = document.getElementById("auth-error");
+  const nameGroup = document.getElementById("name-group");
+  const submitBtn = document.getElementById("auth-submit-btn");
+  const toggleLink = document.getElementById("auth-toggle-link");
+  const toggleText = document.getElementById("auth-toggle-text");
+  
+  let isLoginMode = true;
+
+  // Check if user is already logged in
+  if (localStorage.getItem("token")) {
+    if (authOverlay) authOverlay.style.display = "none";
+  }
+
+  // Toggle between Login and Register
+  if (toggleLink) {
+    toggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      authTitle.textContent = isLoginMode ? "Welcome Back" : "Create Account";
+      submitBtn.textContent = isLoginMode ? "Login" : "Sign Up";
+      toggleText.textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
+      toggleLink.textContent = isLoginMode ? "Sign up" : "Login";
+      nameGroup.style.display = isLoginMode ? "none" : "block";
+      authError.textContent = "";
+    });
+  }
+
+  // Handle Form Submit
+  if (authForm) {
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      authError.textContent = "";
+      
+      const email = document.getElementById("auth-email").value;
+      const password = document.getElementById("auth-password").value;
+      const name = document.getElementById("auth-name").value;
+      
+      const endpoint = isLoginMode ? "/api/auth/login" : "/api/auth/register";
+      const payload = isLoginMode ? { email, password } : { email, password, name };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.detail || "Authentication failed");
+        
+        if (isLoginMode) {
+          localStorage.setItem("token", data.access_token);
+          window.location.reload(); 
+        } else {
+          // Auto-login after registration
+          const loginRes = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+          });
+          const loginData = await loginRes.json();
+          localStorage.setItem("token", loginData.access_token);
+          window.location.reload();
+        }
+      } catch (err) {
+        authError.textContent = err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  // --- 2. THEME SWITCHER ---
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", currentTheme);
@@ -21,11 +99,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 2. HELPER: Clean Markdown ---
+  // --- 3. HELPERS ---
   function cleanMarkdown(text) {
     if (!text) return "";
     let clean = text;
-    
     clean = clean.replace(/[*#_]/g, '');
     clean = clean.replace(/\|/g, '  ');
     clean = clean.replace(/-{3,}/g, '');
@@ -47,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return div;
   }
 
-  // --- 3. ROUTER ---
+  // --- 4. ROUTER ---
   const pages = ["dashboard", "predict", "assistant", "analytics", "reports", "monitoring"];
   function showPage(name) {
     if (!pages.includes(name)) name = "dashboard";
@@ -69,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("hashchange", () => showPage(location.hash.slice(1) || "dashboard"));
   showPage(location.hash.slice(1) || "dashboard"); 
 
-  // --- 4. DASHBOARD & MONITORING ---
+  // --- 5. DASHBOARD & MONITORING ---
   async function loadDashboard() {
     try {
       const data = await API.analytics();
@@ -120,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 5. PREDICT ---
+  // --- 6. PREDICT ---
   const predictForm = document.getElementById("predict-form");
   if (predictForm) {
     predictForm.addEventListener("submit", async (e) => {
@@ -151,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- VOICE GLOBAL MANAGER ---
+  // --- 7. VOICE & CHAT LOGIC ---
   let activeRecognitions = [];
   function stopAllListening() {
     activeRecognitions.forEach(r => {
@@ -159,10 +236,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 6. AI CHAT LOGIC ---
   async function handleChatSubmit(e, inputId, winId, btnElement, micBtnElement) {
     e.preventDefault();
-    
     stopAllListening();
 
     const input = document.getElementById(inputId);
@@ -218,7 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
     mainForm.addEventListener("submit", (e) => handleChatSubmit(e, "chat-input-2", "chat-window-2", mainForm.querySelector("button[type='submit']"), document.getElementById("mic-btn-2")));
   }
 
-  // --- 7. VOICE AGENT ---
   function setupVoice(micBtnId, inputId) {
     const micBtn = document.getElementById(micBtnId);
     if (!micBtn) return;
