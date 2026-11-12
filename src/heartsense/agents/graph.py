@@ -21,10 +21,11 @@ class AgentState(TypedDict):
     tool_output: dict
     answer: str
 
+# UPDATED: Explicitly telling the router to send model accuracy/MLflow to analytics
 SUPERVISOR_PROMPT = """You are a router. Given a user question, reply ONLY with one word:
 - predict    → user asks about their own heart disease risk or a prediction
 - rag        → user asks about medical knowledge, prevention, cholesterol, BP
-- analytics  → user asks for stats or counts of past predictions
+- analytics  → user asks for stats, counts of past predictions, model accuracy, MLflow metrics, or system performance
 - chat       → anything else (greetings, general questions)"""
 
 def supervisor(state: AgentState) -> AgentState:
@@ -47,9 +48,9 @@ def supervisor(state: AgentState) -> AgentState:
 # Tool Runner Function
 async def tool_runner(state: AgentState) -> AgentState:
     if state["route"] == "chat":
-        llm = get_llm()
-        # THE FIX: Force the persona
-        system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT or an OpenAI model. Keep answers brief and focused on heart health."
+        llm = get_llm(temperature=0.0)
+        # UPDATED: If it routes to chat but asks about MLflow, politely decline and point to the UI
+        system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT or an OpenAI model. Keep answers brief and focused on heart health. If asked about model accuracy or MLflow, state that you don't have direct access to that in this chat, but advise the user to check the 'Model Monitoring' tab in the dashboard."
         res = llm.invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content=state["question"])
@@ -69,7 +70,7 @@ async def tool_runner(state: AgentState) -> AgentState:
             tool = tool_map.get(tool_name)
             
             if tool is None:
-                return {**state, "answer": "Tool not available right now."}
+                return {**state, "answer": f"The tool '{tool_name}' is not available right now."}
 
             result = await tool.ainvoke(state.get("tool_input") or {"query": state["question"]})
             
@@ -82,10 +83,13 @@ async def tool_runner(state: AgentState) -> AgentState:
 def summarize(state: AgentState) -> AgentState:
     if state.get("answer"):
         return state
-    llm = get_llm(temperature=0.2)
+    # UPDATED: Temperature 0.0 to prevent hallucination during summarization
+    llm = get_llm(temperature=0.0) 
     prompt = f"""User question: {state['question']}
 Tool output: {state['tool_output']}
-Give a short, safe answer. Do not diagnose or prescribe."""
+Give a short, accurate answer based ONLY on the tool output above. 
+Do not invent information. Do not diagnose or prescribe."""
+    
     response = llm.invoke([HumanMessage(content=prompt)]).content
     if isinstance(response, list): response = response[0].get("text", "")
     return {**state, "answer": str(response)}
