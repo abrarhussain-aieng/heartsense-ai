@@ -68,3 +68,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return email
     except JWTError:
         raise credentials_exception
+
+# --- RESTORED THIS FUNCTION SO PREDICT.PY DOES NOT CRASH ---
+def log_prediction(prediction: int, p0: float, p1: float):
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "INSERT INTO predictions (prediction, p0, p1) VALUES (?, ?, ?)",
+        (prediction, p0, p1),
+    )
+    conn.commit()
+    conn.close()
