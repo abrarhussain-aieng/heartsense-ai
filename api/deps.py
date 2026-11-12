@@ -1,24 +1,10 @@
 import sqlite3
 from pathlib import Path
-import firebase_admin
-from firebase_admin import credentials, auth as firebase_auth
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends
 from heartsense.config import settings
 
 DB_PATH = Path("artifacts/history.db")
 DB_PATH.parent.mkdir(exist_ok=True)
-
-# Initialize Firebase Admin SDK
-# Assumes firebase-service-account.json is in the root directory
-if not firebase_admin._apps:
-    try:
-        cred = credentials.Certificate("firebase-service-account.json")
-        firebase_admin.initialize_app(cred)
-    except Exception as e:
-        print(f"Warning: Could not initialize Firebase Admin SDK: {e}")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/firebase")
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -36,44 +22,36 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             name TEXT,
-            firebase_uid TEXT UNIQUE,
+            firebase_uid TEXT UNIQUE, 
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )"""
     )
     conn.commit()
     conn.close()
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        decoded_token = firebase_auth.verify_id_token(token)
-        email = decoded_token.get("email")
-        if not email:
-            raise HTTPException(status_code=401, detail="Email not found in token")
-        return email
-    except firebase_auth.InvalidIdTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+def get_current_user():
+    """
+    Since we removed Firebase login, we bypass authentication 
+    and just return a static user for the dashboard.
+    """
+    return "abrar@heartsense.ai"
 
-def get_or_create_firebase_user(email: str, name: str, uid: str):
+def get_or_create_user(email: str, name: str):
+    """
+    Creates or retrieves the user from the local SQLite database.
+    Firebase UID logic has been removed.
+    """
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
     user = cursor.fetchone()
     
-    if user:
-        if not user[3]:
-            cursor.execute("UPDATE users SET firebase_uid = ? WHERE email = ?", (uid, email))
-            conn.commit()
-    else:
+    if not user:
+        # Insert the user if they don't exist (firebase_uid is set to NULL)
         cursor.execute(
-            "INSERT INTO users (email, name, firebase_uid) VALUES (?, ?, ?)",
-            (email, name, uid)
+            "INSERT INTO users (email, name, firebase_uid) VALUES (?, ?, NULL)",
+            (email, name)
         )
         conn.commit()
         

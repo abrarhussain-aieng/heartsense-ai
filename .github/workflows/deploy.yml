@@ -74,7 +74,6 @@ jobs:
             --env-file /home/ubuntu/.env \
             -v /home/ubuntu/artifacts:/app/artifacts \
             -v /home/ubuntu/chroma:/app/chroma \
-            -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
             $ECR_REGISTRY/$ECR_REPOSITORY:latest
             
           # 7. Start the MCP container
@@ -86,5 +85,4 @@ jobs:
             --env-file /home/ubuntu/.env \
             -v /home/ubuntu/artifacts:/app/artifacts \
             -v /home/ubuntu/chroma:/app/chroma \
-            -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
             $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server

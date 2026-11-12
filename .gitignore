@@ -15,4 +15,3 @@ mlruns/
 .DS_Store
 data/raw/.dvc/cache
 .cache/
-firebase-service-account.json

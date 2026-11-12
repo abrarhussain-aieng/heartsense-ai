@@ -10,4 +10,3 @@ tests
 *.db
 .venv
 ai-env
-firebase-service-account.json

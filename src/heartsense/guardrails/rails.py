@@ -1,29 +1,38 @@
 import re
+import logging
 from nemoguardrails import RailsConfig, LLMRails
 from heartsense.config import settings
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# 1. Split into two distinct lists for better control
+logger = logging.getLogger(__name__)
+
+# 1. Deterministic Regex Filters
 EXPLICIT_TERMS = [
     r"\bsex\b", r"\bsexual\b", r"\bdick\b", r"\bpussy\b", r"\bpenis\b", r"\bvagina\b",
     r"\bporn\b", r"\bnude\b"
 ]
 
-# Only block direct attempts to get a personal diagnosis or prescription
+# Added 'risk factor' and 'understand my heart health' to catch the exact prompts
 MEDICAL_OVERRIDES = [
-    r"\bprescribe\b", r"\bdiagnose\b", r"\bdiagnosis\b"
+    r"\bprescribe\b", r"\bdiagnose\b", r"\bdiagnosis\b", 
+    r"\brisk factor\b", r"\bunderstand my heart health\b", r"\bmedical advice\b"
 ]
 
+# 2. NeMo Colang Configuration
 RAILS_CONFIG = """
 define user ask for medical advice
   "Do I have heart disease?"
   "Diagnose me"
   "What medication should I take?"
   "Prescribe me"
+  "What are the main risk factors of the heart disease?"
+  "What are the risk factors of heart disease?"
+  "Tell me about heart disease risk factors"
+  "Can you help me understand my heart health?"
 
 define bot refuse medical advice
-  "I am a cardiovascular health assistant and cannot provide diagnoses or prescribe medication. Please consult a licensed clinician."
+  "I am a cardiovascular health assistant and cannot provide diagnoses, prescribe medication, or offer personalized medical advice. Please consult a licensed clinician."
 
 define flow refuse medical advice
   user ask for medical advice
@@ -53,7 +62,6 @@ def build_rails() -> LLMRails:
     global _config, _rails
     if _rails is None:
         _config = RailsConfig.from_content(RAILS_CONFIG)
-        # Pass a safe, single LLM to prevent NeMo from crashing
         _rails = LLMRails(_config, llm=_get_nemo_llm())
     return _rails
 
@@ -69,28 +77,39 @@ async def check_input(text: str) -> dict:
                 "message": "I am a cardiovascular health assistant and cannot answer questions about sexual health or explicit topics."
             }
             
-    # Block direct requests for personal medical advice
+    # Block direct requests for personal medical advice/risk factors instantly
     for pattern in MEDICAL_OVERRIDES:
         if re.search(pattern, text_lower):
             return {
                 "allowed": False, 
-                "message": "I cannot provide diagnoses, prescribe medication, or recommend treatments. Please consult a licensed healthcare professional."
+                "message": "I am a cardiovascular health assistant and cannot provide diagnoses, prescribe medication, or offer personalized medical advice. Please consult a licensed clinician."
             }
 
     # --- FIX 2: NEMO GUARDRAILS FALLBACK ---
     try:
-        # build_rails() is safely inside the try block
         rails = build_rails()
+        # This generates the response through NeMo
         result = await rails.generate_async(messages=[{"role": "user", "content": text}])
-        content = result.get("content", "") if isinstance(result, dict) else str(result)
+        
+        # Safely extract content based on NeMo's return type
+        if isinstance(result, dict):
+            content = result.get("content", "")
+        else:
+            content = str(result)
+            
         content = content.strip()
         
-        # If NeMo triggered a refusal based on our Colang rules
-        blocked = "cannot provide" in content.lower() or "cannot answer" in content.lower()
-        return {"allowed": not blocked, "message": content if blocked else ""}
+        # If NeMo triggered our specific refusal flow, it will contain this string
+        refusal_phrase = "cannot provide diagnoses, prescribe medication, or offer personalized medical advice"
+        is_blocked = refusal_phrase in content.lower()
+        
+        if is_blocked:
+            return {"allowed": False, "message": content}
+        else:
+            # If not blocked by NeMo, it's allowed (the main app will generate the actual AI response)
+            return {"allowed": True, "message": ""}
         
     except Exception as e:
-        # If NeMo crashes or no API keys are present, we fail open safely.
-        # The regex pre-filter above already blocked explicit/medical prompts.
-        print(f"NeMo Guardrail Error (Skipping NeMo): {e}")
+        logger.error(f"NeMo Guardrail Error (Skipping NeMo): {e}")
+        # Fail safely: If NeMo crashes, allow the prompt (regex already filtered the bad ones)
         return {"allowed": True, "message": ""}

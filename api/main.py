@@ -5,8 +5,6 @@ from pathlib import Path
 import logging
 from api.routers import predict, health, history, analytics, report, assistant, monitoring, auth
 
-from api.routers import predict, health, history, analytics, report, assistant, monitoring
-
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="HeartSense AI", version="1.0.0")
 
