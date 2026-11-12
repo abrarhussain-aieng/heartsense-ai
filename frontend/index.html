@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
 
-  <!-- LIBRARIES FOR OCR AND PDF EXTRACTION -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -49,21 +48,27 @@
       <a href="#analytics" data-page="analytics"><i class="fa-solid fa-chart-simple"></i> Analytics</a>
       <a href="#predict" data-page="predict"><i class="fa-solid fa-stethoscope"></i> Predictions</a>
       <a href="#assistant" data-page="assistant"><i class="fa-solid fa-robot"></i> Ask AI Agent</a>
-      <a href="#voice" data-page="voice"><i class="fa-solid fa-microphone"></i> Voice Agent</a>
       <a href="#reports" data-page="reports"><i class="fa-solid fa-file-medical"></i> Reports</a>
       <a href="#monitoring" data-page="monitoring"><i class="fa-solid fa-gear"></i> Model Monitoring</a>
     </nav>
+
     <div class="sidebar-bottom">
+      <!-- MOVED THEME TOGGLE HERE -->
+      <button id="theme-toggle" class="sidebar-btn">
+        <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+      </button>
+
       <div class="promo-card">
         <i class="fa-solid fa-rocket"></i>
         <h4>Smarter Health.<br>A Healthier You.</h4>
       </div>
-      <div class="user-profile" onclick="localStorage.removeItem('token'); window.location.reload();"
-        style="cursor: pointer;" title="Click to Logout">
-        <div class="avatar">A</div>
+
+      <div class="user-profile" onclick="localStorage.clear(); window.location.reload();" style="cursor: pointer;"
+        title="Click to Logout">
+        <div class="avatar" id="sidebar-avatar">A</div>
         <div>
-          <p>Abrar Hussain</p>
-          <p>Premium User (Logout)</p>
+          <p id="sidebar-name">Loading...</p>
+          <p>Logout</p>
         </div>
       </div>
     </div>
@@ -71,19 +76,12 @@
 
   <!-- MAIN CONTENT -->
   <main class="main">
-    <header class="topbar" style="justify-content: flex-end;">
-      <div class="top-actions">
-        <button id="theme-toggle"><i class="fa-solid fa-moon"></i></button>
-        <button class="notification-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
-      </div>
-    </header>
-
     <div class="content-scroll">
       <!-- DASHBOARD PAGE -->
       <section id="page-dashboard" class="page active">
         <div class="header-section">
           <div>
-            <h1 class="greeting">Welcome back, <span class="highlight">Abrar!</span> 👋</h1>
+            <h1 class="greeting">Welcome back, <span class="highlight" id="greeting-name">User</span> 👋</h1>
             <p class="subtitle">Here's your health overview and AI insights.</p>
           </div>
           <div class="header-graphic">
@@ -108,8 +106,8 @@
             <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-content">
               <h3>Accuracy</h3>
-              <p class="value" id="acc-value">—</p>
-              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> +1.2%</p>
+              <p class="value" id="acc-value">88.0%</p>
+              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> Stable</p>
             </div>
           </div>
           <div class="kpi-card c-green">
@@ -150,7 +148,7 @@
                   class="status-online">Online</span></h2>
             </div>
             <div id="chat-window" class="chat-window">
-              <div class="msg bot">Hello Abrar! Ask me anything about your heart health.</div>
+              <div class="msg bot" id="ai-greeting">Hello! Ask me anything about your heart health.</div>
             </div>
             <form id="chat-form" class="chat-input-area">
               <input id="chat-input" placeholder="Ask anything about your health..." />
@@ -179,7 +177,6 @@
           <div class="glass-panel actions-panel">
             <h2>Quick Actions</h2>
             <div class="actions-grid">
-              <!-- UPDATED FILE INPUT TO ACCEPT IMAGES AND PDFs -->
               <input type="file" id="report-upload" style="display: none;" accept="image/*,.pdf,.json">
               <button class="action-btn" onclick="document.getElementById('report-upload').click()"><i
                   class="fa-solid fa-cloud-arrow-up c-blue-bg"></i>Upload Report</button>
@@ -204,7 +201,7 @@
         </div>
       </section>
 
-      <!-- OTHER PAGES -->
+      <!-- OTHER PAGES (Hidden by default) -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
         <form id="predict-form" class="glass-panel form-grid">
@@ -279,11 +276,6 @@
       <section id="page-monitoring" class="page">
         <h1>📊 Model Monitoring</h1>
         <div id="monitoring-output" class="glass-panel">Loading...</div>
-      </section>
-
-      <section id="page-voice" class="page">
-        <h1>Voice Agent</h1>
-        <p>Voice is available on the Dashboard.</p>
       </section>
     </div>
   </main>

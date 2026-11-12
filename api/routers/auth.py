@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from api.deps import get_password_hash, verify_password, create_access_token, get_current_user, init_db
 import sqlite3
 from api.deps import DB_PATH
@@ -17,13 +17,11 @@ def register(user: UserAuth):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Check if user exists
     cursor.execute("SELECT * FROM users WHERE email = ?", (user.email,))
     if cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Hash password and save
     hashed_pw = get_password_hash(user.password)
     name = user.name if user.name else user.email.split("@")[0]
     
@@ -47,9 +45,11 @@ def login(user: UserAuth):
     if not row or not verify_password(user.password, row[0]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    # Create Token
-    token = create_access_token(data={"sub": user.email})
-    return {"access_token": token, "token_type": "bearer", "name": row[1]}
+    user_name = row[1] if row[1] else user.email.split("@")[0]
+    
+    # ADDED NAME TO TOKEN PAYLOAD AND RESPONSE
+    token = create_access_token(data={"sub": user.email, "name": user_name})
+    return {"access_token": token, "token_type": "bearer", "name": user_name}
 
 @router.get("/me")
 def read_users_me(current_user: str = Depends(get_current_user)):

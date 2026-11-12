@@ -1,12 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
   
-  // Set PDF.js worker path
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 
+  // --- 0. DYNAMIC USER UI UPDATE ---
+  function updateUserUI() {
+    const userName = localStorage.getItem("user_name") || "User";
+    const firstName = userName.split(" ")[0];
+    
+    const greetingName = document.getElementById("greeting-name");
+    if (greetingName) greetingName.textContent = firstName;
+    
+    const sidebarName = document.getElementById("sidebar-name");
+    if (sidebarName) sidebarName.textContent = userName;
+    
+    const sidebarAvatar = document.getElementById("sidebar-avatar");
+    if (sidebarAvatar) sidebarAvatar.textContent = firstName.charAt(0).toUpperCase();
+
+    const aiGreeting = document.getElementById("ai-greeting");
+    if (aiGreeting) aiGreeting.textContent = `Hello ${firstName}! Ask me anything about your heart health.`;
+  }
+
+  if (localStorage.getItem("token")) {
+    const authOverlay = document.getElementById("auth-overlay");
+    if (authOverlay) authOverlay.style.display = "none";
+    updateUserUI();
+  }
+
   // --- 1. AUTHENTICATION LOGIC ---
-  const authOverlay = document.getElementById("auth-overlay");
   const authForm = document.getElementById("auth-form");
   const authTitle = document.getElementById("auth-title");
   const authError = document.getElementById("auth-error");
@@ -16,10 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleText = document.getElementById("auth-toggle-text");
   
   let isLoginMode = true;
-
-  if (localStorage.getItem("token")) {
-    if (authOverlay) authOverlay.style.display = "none";
-  }
 
   if (toggleLink) {
     toggleLink.addEventListener("click", (e) => {
@@ -59,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (isLoginMode) {
           localStorage.setItem("token", data.access_token);
+          localStorage.setItem("user_name", data.name); 
           window.location.reload(); 
         } else {
           const loginRes = await fetch("/api/auth/login", {
@@ -68,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           const loginData = await loginRes.json();
           localStorage.setItem("token", loginData.access_token);
+          localStorage.setItem("user_name", loginData.name);
           window.location.reload();
         }
       } catch (err) {
@@ -78,16 +98,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 2. THEME SWITCHER ---
+  // --- 2. THEME SWITCHER (UPDATED FOR SIDEBAR) ---
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", currentTheme);
   
-  function updateThemeIcon(theme) {
+  function updateThemeUI(theme) {
     if (!themeToggle) return;
-    themeToggle.innerHTML = theme === "dark" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+    if (theme === "dark") {
+      themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i> <span>Dark Mode</span>';
+    } else {
+      themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i> <span>Light Mode</span>';
+    }
   }
-  updateThemeIcon(currentTheme);
+  updateThemeUI(currentTheme);
 
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
@@ -95,7 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const newTheme = isDark ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", newTheme);
       localStorage.setItem("theme", newTheme);
-      updateThemeIcon(newTheme);
+      updateThemeUI(newTheme);
+      
       if (location.hash === "#analytics" || location.hash === "#dashboard" || location.hash === "") {
         loadDashboard();
         loadAnalytics();
@@ -129,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- 4. ROUTER ---
-  const pages = ["dashboard", "predict", "assistant", "analytics", "reports", "monitoring", "voice"];
+  const pages = ["dashboard", "predict", "assistant", "analytics", "reports", "monitoring"];
   function showPage(name) {
     if (!pages.includes(name)) name = "dashboard";
     document.querySelectorAll(".page").forEach((el) => el.classList.remove("active"));
@@ -145,10 +170,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (name === "analytics") loadAnalytics();
       if (name === "dashboard") {
         loadDashboard();
-        if (typeof renderRiskDistribution === "function") renderRiskDistribution();
       }
       if (name === "monitoring") loadMonitoring();
-    }, 100);
+    }, 150);
   }
   window.addEventListener("hashchange", () => showPage(location.hash.slice(1) || "dashboard"));
   showPage(location.hash.slice(1) || "dashboard"); 
@@ -240,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. UPLOAD REPORT LOGIC (OCR + PDF EXTRACTION) ---
+  // --- 7. UPLOAD REPORT LOGIC ---
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
@@ -252,17 +276,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const resultBox = document.getElementById("predict-result");
       
       resultBox.textContent = "Extracting data from report...";
-      window.location.hash = "#predict"; // Switch to predict page to show loading
+      window.location.hash = "#predict";
 
       try {
         if (fileType === "application/json") {
-          // Handle JSON directly
           const text = await file.text();
           const data = JSON.parse(text);
           return performPrediction(data);
           
         } else if (fileType === "application/pdf") {
-          // Extract text from PDF
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
           let fullText = "";
@@ -274,7 +296,6 @@ document.addEventListener("DOMContentLoaded", () => {
           extractedText = fullText;
           
         } else if (fileType.startsWith("image/")) {
-          // OCR Image using Tesseract.js
           const result = await Tesseract.recognize(file, 'eng', {
             logger: m => {
               if (m.status === 'recognizing text') {
@@ -285,49 +306,36 @@ document.addEventListener("DOMContentLoaded", () => {
           extractedText = result.data.text;
         }
 
-        // Parse extracted text into vitals
         resultBox.textContent = "Analyzing extracted medical data...";
         const vitals = extractVitalsFromText(extractedText);
-        console.log("Extracted Vitals:", vitals);
-        
-        // Send to predict
         performPrediction(vitals);
 
       } catch (err) {
         resultBox.textContent = "Error processing file: " + err.message;
-        console.error(err);
       }
     });
   }
 
-  // Regex function to find medical values in the text
   function extractVitalsFromText(text) {
-    // Defaults (from test.json)
     const vitals = {
         Age: 50, Sex: "M", ChestPainType: "ATA", 
         RestingBP: 120, Cholesterol: 200, FastingBS: 0, 
         RestingECG: "Normal", MaxHR: 150, ExerciseAngina: "N", 
         Oldpeak: 1.0, ST_Slope: "Up"
     };
-
     const ageMatch = text.match(/Age[:\s]+(\d+)/i);
     if (ageMatch) vitals.Age = parseInt(ageMatch[1]);
-
     const sexMatch = text.match(/(?:Sex|Gender)[:\s]+(M|F|Male|Female)/i);
     if (sexMatch) {
         const val = sexMatch[1].toLowerCase();
         vitals.Sex = (val === 'm' || val === 'male') ? 'M' : 'F';
     }
-
     const bpMatch = text.match(/(?:Resting\s*BP|Blood\s*Pressure)[:\s]+(\d+)/i);
     if (bpMatch) vitals.RestingBP = parseInt(bpMatch[1]);
-
     const cholMatch = text.match(/Cholesterol[:\s]+(\d+)/i);
     if (cholMatch) vitals.Cholesterol = parseInt(cholMatch[1]);
-
     const hrMatch = text.match(/(?:Max\s*HR|Heart\s*Rate)[:\s]+(\d+)/i);
     if (hrMatch) vitals.MaxHR = parseInt(hrMatch[1]);
-
     return vitals;
   }
 
@@ -404,7 +412,6 @@ document.addEventListener("DOMContentLoaded", () => {
     mainForm.addEventListener("submit", (e) => handleChatSubmit(e, "chat-input-2", "chat-window-2", mainForm.querySelector("button[type='submit']"), document.getElementById("mic-btn-2")));
   }
 
-  // --- VOICE AGENT FIX ---
   function setupVoice(micBtnId, inputId, isDirectVoice = false) {
     const micBtn = document.getElementById(micBtnId);
     if (!micBtn) return;
