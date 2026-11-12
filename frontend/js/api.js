@@ -26,13 +26,21 @@ const API = {
   },
 
   // Auth endpoints
-  async login(username, password) {
+    async login(username, password) {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    if (!res.ok) throw new Error((await res.json()).detail || "Login failed");
+    if (!res.ok) {
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        throw new Error(data.detail || "Login failed");
+      } catch (e) {
+        throw new Error(text || "Server error during login");
+      }
+    }
     const data = await res.json();
     this.setToken(data.access_token);
     return data;
@@ -44,7 +52,15 @@ const API = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    if (!res.ok) throw new Error((await res.json()).detail || "Registration failed");
+    if (!res.ok) {
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        throw new Error(data.detail || "Registration failed");
+      } catch (e) {
+        throw new Error(text || "Server error during registration");
+      }
+    }
     return res.json();
   },
 
