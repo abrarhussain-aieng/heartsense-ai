@@ -56,17 +56,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // --- PASSWORD VISIBILITY TOGGLE ---
+    // --- PASSWORD VISIBILITY TOGGLE ---
   const togglePasswordBtn = document.getElementById("toggle-password");
+  const eyeIcon = document.getElementById("eye-icon");
+  const eyeOffIcon = document.getElementById("eye-off-icon");
+
   if (togglePasswordBtn) {
     togglePasswordBtn.addEventListener("click", () => {
       const passwordInput = document.getElementById("auth-password");
+      
       if (passwordInput.type === "password") {
         passwordInput.type = "text";
-        togglePasswordBtn.textContent = "🙈"; // Hide icon
+        eyeIcon.style.display = "none";
+        eyeOffIcon.style.display = "block";
       } else {
         passwordInput.type = "password";
-        togglePasswordBtn.textContent = "👁️"; // Show icon
+        eyeIcon.style.display = "block";
+        eyeOffIcon.style.display = "none";
       }
     });
   }
