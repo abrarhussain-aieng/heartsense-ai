@@ -49,23 +49,23 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, ECR_REGISTRY, ECR_REPOSITORY
         script: |
-          # 0. Create a shared Docker network
-          docker network create heartsense-net || true
-          
           # 1. Stop and remove old containers
           docker stop heartsense-api mcp || true
           docker rm heartsense-api mcp || true
           
-          # 2. Clean up unused Docker data
+          # 2. Clean up unused Docker data (This will delete old networks)
           docker system prune -af --volumes
           
-          # 3. Authenticate Docker with ECR
+          # 3. Create the shared Docker network AFTER pruning
+          docker network create heartsense-net || true
+          
+          # 4. Authenticate Docker with ECR
           aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
           
-          # 4. Pull the latest image
+          # 5. Pull the latest image
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          # 5. Start the API container
+          # 6. Start the API container
           docker run -d \
             --name heartsense-api \
             --network heartsense-net \
@@ -76,7 +76,7 @@ jobs:
             -v /home/ubuntu/chroma:/app/chroma \
             $ECR_REGISTRY/$ECR_REPOSITORY:latest
             
-          # 6. Start the MCP container (named 'mcp' to match the .env)
+          # 7. Start the MCP container (named 'mcp' to match the .env)
           docker run -d \
             --name mcp \
             --network heartsense-net \
