@@ -1,5 +1,61 @@
 document.addEventListener("DOMContentLoaded", () => {
   
+  // --- AUTHENTICATION LOGIC ---
+  const authOverlay = document.getElementById("auth-overlay");
+  const authForm = document.getElementById("auth-form");
+  const authUsername = document.getElementById("auth-username");
+  const authPassword = document.getElementById("auth-password");
+  const authSubmitBtn = document.getElementById("auth-submit-btn");
+  const authToggleLink = document.getElementById("auth-toggle-link");
+  const authToggleText = document.getElementById("auth-toggle-text");
+  const authError = document.getElementById("auth-error");
+  
+  let isLoginMode = true;
+
+  // Check if already logged in
+  if (API.getToken()) {
+    authOverlay.style.display = "none";
+  }
+
+  // Toggle between Login and Sign Up
+  if (authToggleLink) {
+    authToggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      authSubmitBtn.textContent = isLoginMode ? "Login" : "Sign Up";
+      authToggleText.textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
+      authToggleLink.textContent = isLoginMode ? "Sign up" : "Login";
+      authError.textContent = "";
+    });
+  }
+
+  // Handle Submit
+  if (authForm) {
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      authSubmitBtn.disabled = true;
+      authError.textContent = "";
+      
+      const user = authUsername.value.trim();
+      const pass = authPassword.value.trim();
+
+      try {
+        if (isLoginMode) {
+          await API.login(user, pass);
+          window.location.reload(); 
+        } else {
+          await API.register(user, pass);
+          await API.login(user, pass);
+          window.location.reload();
+        }
+      } catch (err) {
+        authError.textContent = err.message;
+      } finally {
+        authSubmitBtn.disabled = false;
+      }
+    });
+  }
+  
   // --- 1. THEME SWITCHER ---
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";

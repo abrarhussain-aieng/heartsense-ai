@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import logging
+from api.routers import predict, health, history, analytics, report, assistant, monitoring, auth
 
 from api.routers import predict, health, history, analytics, report, assistant, monitoring
 
@@ -23,6 +24,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(report.router, prefix="/api")
 app.include_router(assistant.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
+app.include_router(auth.router, prefix="/api/auth")
 
 frontend_dir = Path("frontend")
 if frontend_dir.exists():

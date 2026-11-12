@@ -484,13 +484,15 @@ form button[type="submit"]:hover {
 /* =========================================
    MOBILE RESPONSIVENESS
    ========================================= */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
 
   /* 1. Stack the main layout vertically */
   body {
     flex-direction: column;
     height: auto;
     overflow-y: auto;
+    overflow-x: hidden;
+    /* Prevent horizontal scrolling */
   }
 
   /* 2. Make sidebar full width and horizontal */
@@ -501,14 +503,27 @@ form button[type="submit"]:hover {
     padding: 15px;
     border-right: none;
     border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .sidebar .brand {
+    margin-bottom: 10px;
   }
 
   .sidebar nav {
     flex-direction: row;
     overflow-x: auto;
-    /* Allow scrolling the menu horizontally */
-    padding-bottom: 10px;
+    padding-bottom: 5px;
     gap: 10px;
+    /* Hide scrollbar for a clean look */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .sidebar nav::-webkit-scrollbar {
+    display: none;
   }
 
   .sidebar nav a {
@@ -526,20 +541,28 @@ form button[type="submit"]:hover {
   .main {
     height: auto;
     overflow: visible;
+    width: 100%;
+  }
+
+  .topbar {
+    padding: 15px;
   }
 
   .content-scroll {
     padding: 15px;
+    width: 100%;
   }
 
   /* 4. Stack the 4 cards into a single column */
   .cards-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   /* 5. Stack the chart and chat box */
   .dashboard-layout {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   /* Make sure forms look good on mobile */
@@ -555,4 +578,70 @@ form button[type="submit"]:hover {
   .card .value {
     font-size: 24px;
   }
+}
+
+/* AUTH OVERLAY */
+#auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-box {
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.auth-box h2 {
+  margin-top: 0;
+  color: var(--accent);
+  font-size: 28px;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+}
+
+.auth-box button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.auth-toggle {
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.auth-toggle a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-error {
+  color: #ef4444;
+  font-size: 14px;
+  margin-bottom: 10px;
+  min-height: 20px;
 }

@@ -37,3 +37,6 @@ langsmith>=0.1
 # Observability / Tests
 pytest>=8.3
 pytest-asyncio>=0.24
+
+passlib[bcrypt]
+PyJWT

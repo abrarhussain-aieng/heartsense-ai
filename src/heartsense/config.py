@@ -31,5 +31,9 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False
     langsmith_api_key: str = ""
     langsmith_project: str = "heartsense-ai"
+    
+    # ===== Authentication =====
+    jwt_secret: str = "fallback-secret-key"
+    jwt_algorithm: str = "HS256"
 
 settings = Settings()

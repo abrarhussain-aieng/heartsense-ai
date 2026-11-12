@@ -1,35 +1,57 @@
 const API = {
-  async predict(payload) {
-    const res = await fetch("/api/predict", {
+  // Helper to get token
+  getToken: () => localStorage.getItem("token"),
+  setToken: (token) => localStorage.setItem("token", token),
+  removeToken: () => localStorage.removeItem("token"),
+
+  // Generic fetch wrapper with Auth Header
+  async request(url, options = {}) {
+    const token = this.getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
+
+    const res = await fetch(url, { ...options, headers });
+    
+    if (res.status === 401) {
+      this.removeToken();
+      window.location.reload(); // Force back to login
+      throw new Error("Unauthorized");
+    }
+    
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  // Auth endpoints
+  async login(username, password) {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ username, password }),
     });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    if (!res.ok) throw new Error((await res.json()).detail || "Login failed");
+    const data = await res.json();
+    this.setToken(data.access_token);
+    return data;
   },
-  async analytics() {
-    const res = await fetch("/api/analytics");
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-  async history() {
-    const res = await fetch("/api/history");
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
-  async assistant(question) {
-    const res = await fetch("/api/assistant", {
+
+  async register(username, password) {
+    const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ username, password }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error((await res.json()).detail || "Registration failed");
     return res.json();
   },
-  async monitoring() {
-    const res = await fetch("/api/monitoring");
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
+
+  // Existing endpoints using the request wrapper
+  async predict(payload) { return this.request("/api/predict", { method: "POST", body: JSON.stringify(payload) }); },
+  async analytics() { return this.request("/api/analytics"); },
+  async history() { return this.request("/api/history"); },
+  async assistant(question) { return this.request("/api/assistant", { method: "POST", body: JSON.stringify({ question }) }); },
+  async monitoring() { return this.request("/api/monitoring"); },
 };
