@@ -65,26 +65,26 @@ jobs:
           # 5. Pull the latest image
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-                # 6. Start the API container
-      docker run -d \
-        --name heartsense-api \
-        --network heartsense-net \
-        --restart unless-stopped \
-        -p 80:8000 \
-        --env-file /home/ubuntu/.env \
-        -v /home/ubuntu/artifacts:/app/artifacts \
-        -v /home/ubuntu/chroma:/app/chroma \
-        -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
-        $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        
-      # 7. Start the MCP container
-      docker run -d \
-        --name mcp \
-        --network heartsense-net \
-        --restart unless-stopped \
-        -p 8001:8001 \
-        --env-file /home/ubuntu/.env \
-        -v /home/ubuntu/artifacts:/app/artifacts \
-        -v /home/ubuntu/chroma:/app/chroma \
-        -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
-        $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server
+          # 6. Start the API container
+          docker run -d \
+            --name heartsense-api \
+            --network heartsense-net \
+            --restart unless-stopped \
+            -p 80:8000 \
+            --env-file /home/ubuntu/.env \
+            -v /home/ubuntu/artifacts:/app/artifacts \
+            -v /home/ubuntu/chroma:/app/chroma \
+            -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            
+          # 7. Start the MCP container
+          docker run -d \
+            --name mcp \
+            --network heartsense-net \
+            --restart unless-stopped \
+            -p 8001:8001 \
+            --env-file /home/ubuntu/.env \
+            -v /home/ubuntu/artifacts:/app/artifacts \
+            -v /home/ubuntu/chroma:/app/chroma \
+            -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server
