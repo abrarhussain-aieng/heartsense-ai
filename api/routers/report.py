@@ -15,12 +15,14 @@ def report(req: ReportRequest):
     ).fetchall()
     conn.close()
 
-    lines = [f"HeartSense AI Report for patient {req.patient_id}", "=" * 50, ""]
+    lines = [f"HeartSense AI Health Report", "=" * 50, f"Patient ID: {req.patient_id}", ""]
     for r in rows:
-        risk = "Elevated" if r[1] == 1 else "Low"
-        lines.append(
-            f"#{r[0]} at {r[4]}  →  {risk} risk  (p0={r[2]:.3f}, p1={r[3]:.3f})"
-        )
-    lines.append("")
-    lines.append("This report is for educational use only. Not a diagnosis.")
-    return "\n".join(lines)
+        risk = "Elevated (High Risk)" if r[1] == 1 else "Low Risk"
+        lines.append(f"[{r[4]}] Risk Level: {risk} | Probability: {(r[3]*100):.1f}%")
+    
+    lines.append("\nDisclaimer: This report is for educational use only. Not medical advice.")
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename=heartsense_report_{req.patient_id}.txt"
+    }
+    return PlainTextResponse(content="\n".join(lines), headers=headers)

@@ -2,200 +2,184 @@
 <html lang="en" data-theme="dark">
 
 <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>HeartSense AI</title>
-          <link rel="stylesheet" href="/css/styles.css" />
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HeartSense AI</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-          <aside class="sidebar">
-                    <div class="brand">🩺 HeartSense AI</div>
-                    <nav id="nav">
-                              <a href="#dashboard" data-page="dashboard" class="active">Dashboard</a>
-                              <a href="#predict" data-page="predict">Predictions</a>
-                              <a href="#assistant" data-page="assistant">Ask AI Agent</a>
-                              <a href="#voice" data-page="voice">Voice Agent</a>
-                              <a href="#analytics" data-page="analytics">Analytics</a>
-                              <a href="#reports" data-page="reports">Reports</a>
-                              <a href="#monitoring" data-page="monitoring">Model Monitoring</a>
-                              <a href="#settings" data-page="settings">Settings</a>
-                    </nav>
-                    <button id="theme-toggle">🌙</button>
-          </aside>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span style="font-size: 28px;">🫀</span>
+      <div>
+        <h2 style="margin:0; font-size: 18px;">HeartSense AI</h2>
+        <p style="margin:0; font-size: 10px; color: var(--muted);">Smart Health Insights</p>
+      </div>
+    </div>
+    <nav id="nav">
+      <a href="#dashboard" data-page="dashboard" class="active">📊 Dashboard</a>
+      <a href="#analytics" data-page="analytics">📈 Analytics</a>
+      <a href="#predict" data-page="predict">🩺 Predictions</a>
+      <a href="#assistant" data-page="assistant">🤖 Ask AI Agent</a>
+      <a href="#reports" data-page="reports">📄 Reports</a>
+      <a href="#monitoring" data-page="monitoring">⚙️ Model Monitoring</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="promo-card" style="text-align: center; display: flex; justify-content: center; align-items: center;">
+        <h4 style="margin:0; color:#fff;">🚀 Smarter Health.<br>A Healthier You.</h4>
+      </div>
+      <div class="user-profile">
+        <div class="avatar">A</div>
+        <div>
+          <p style="margin:0; font-weight:600;">Abrar Hussain</p>
+          <p style="margin:0; font-size:12px; color:#eab308;">Premium User</p>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-          <main class="main">
-                    <!-- Dashboard -->
-                    <section id="page-dashboard" class="page active">
-                              <header>
-                                        <h1>Welcome back, Abrar 👋</h1>
-                                        <p>Here's your health overview and AI insights.</p>
-                              </header>
-                              <section class="cards">
-                                        <div class="card risk">
-                                                  <h3>Heart Risk</h3>
-                                                  <p id="risk-value">Low Risk</p>
-                                        </div>
-                                        <div class="card accuracy">
-                                                  <h3>Model Accuracy</h3>
-                                                  <p id="acc-value">—</p>
-                                        </div>
-                                        <div class="card volume">
-                                                  <h3>Total Analysis</h3>
-                                                  <p id="total-value">—</p>
-                                        </div>
-                                        <div class="card score">
-                                                  <h3>Health Score</h3>
-                                                  <p id="score-value">—</p>
-                                        </div>
-                              </section>
-                              <section class="chart-section">
-                                        <h2>Your Health Analytics</h2>
-                                        <canvas id="healthChart"></canvas>
-                              </section>
-                    </section>
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <header class="topbar" style="justify-content: flex-end;">
+      <div class="top-actions">
+        <button id="theme-toggle" style="font-size: 20px;">🌙</button>
+      </div>
+    </header>
 
-                    <!-- Predict -->
-                    <section id="page-predict" class="page">
-                              <header>
-                                        <h1>Predict Heart Disease Risk</h1>
-                                        <p>Enter patient clinical parameters.</p>
-                              </header>
-                              <form id="predict-form" class="form-grid">
-                                        <label>Age <input name="Age" type="number" min="1" max="120" value="50"
-                                                            required></label>
-                                        <label>Sex
-                                                  <select name="Sex">
-                                                            <option>M</option>
-                                                            <option>F</option>
-                                                  </select>
-                                        </label>
-                                        <label>Chest Pain Type
-                                                  <select name="ChestPainType">
-                                                            <option>ATA</option>
-                                                            <option>NAP</option>
-                                                            <option>ASY</option>
-                                                            <option>TA</option>
-                                                  </select>
-                                        </label>
-                                        <label>Resting BP <input name="RestingBP" type="number" min="50" max="250"
-                                                            value="120" required></label>
-                                        <label>Cholesterol <input name="Cholesterol" type="number" min="50" max="700"
-                                                            value="200" required></label>
-                                        <label>Fasting BS
-                                                  <select name="FastingBS">
-                                                            <option value="0">No</option>
-                                                            <option value="1">Yes</option>
-                                                  </select>
-                                        </label>
-                                        <label>Resting ECG
-                                                  <select name="RestingECG">
-                                                            <option>Normal</option>
-                                                            <option>ST</option>
-                                                            <option>LVH</option>
-                                                  </select>
-                                        </label>
-                                        <label>Max HR <input name="MaxHR" type="number" min="40" max="250" value="150"
-                                                            required></label>
-                                        <label>Exercise Angina
-                                                  <select name="ExerciseAngina">
-                                                            <option>N</option>
-                                                            <option>Y</option>
-                                                  </select>
-                                        </label>
-                                        <label>Oldpeak <input name="Oldpeak" type="number" step="0.1" min="-5" max="10"
-                                                            value="1.0" required></label>
-                                        <label>ST Slope
-                                                  <select name="ST_Slope">
-                                                            <option>Up</option>
-                                                            <option>Flat</option>
-                                                            <option>Down</option>
-                                                  </select>
-                                        </label>
-                                        <button type="submit" class="primary">Predict</button>
-                              </form>
-                              <div id="predict-result" class="result-card"></div>
-                    </section>
+    <div class="content-scroll">
+      <section id="page-dashboard" class="page active">
+        <h1 class="greeting">Welcome back, <span class="highlight">Abrar!</span> 👋</h1>
+        <p class="subtitle">Here's your health overview and AI insights.</p>
 
-                    <!-- Assistant -->
-                    <section id="page-assistant" class="page">
-                              <header>
-                                        <h1>🤖 AI Agent</h1>
-                                        <p>Ask anything about heart-health education.</p>
-                              </header>
-                              <section class="assistant">
-                                        <div id="chat-window"></div>
-                                        <form id="chat-form">
-                                                  <input id="chat-input" placeholder="Ask about your heart health..." />
-                                                  <button type="submit">Send</button>
-                                        </form>
-                              </section>
-                    </section>
+        <div class="cards-grid">
+          <div class="card glass-card risk">
+            <div class="card-icon">❤️</div>
+            <h3>Heart Risk</h3>
+            <p id="risk-value" class="value text-green">Low Risk</p>
+            <p class="trend" style="color:#10b981;">✅ Good News!</p>
+          </div>
+          <div class="card glass-card acc">
+            <div class="card-icon">📊</div>
+            <h3>Model Accuracy</h3>
+            <p id="acc-value" class="value">—</p>
+          </div>
+          <div class="card glass-card total">
+            <div class="card-icon">👥</div>
+            <h3>Total Analysis</h3>
+            <p id="total-value" class="value">—</p>
+          </div>
+          <div class="card glass-card score">
+            <div class="card-icon">🛡️</div>
+            <h3>Health Score</h3>
+            <p id="score-value" class="value">—</p>
+          </div>
+        </div>
 
-                    <!-- Voice -->
-                    <section id="page-voice" class="page">
-                              <header>
-                                        <h1>🎤 Voice Agent</h1>
-                                        <p>Tap the mic, speak, and get a spoken response.</p>
-                              </header>
-                              <div class="voice-panel">
-                                        <button id="mic-btn" class="mic">🎤 Start Listening</button>
-                                        <p id="voice-transcript"></p>
-                                        <p id="voice-response"></p>
-                              </div>
-                    </section>
+        <div class="dashboard-layout">
+          <div class="chart-section glass-panel">
+            <h2>Your Health Analytics</h2>
+            <div class="chart-container">
+              <canvas id="healthChart"></canvas>
+            </div>
+          </div>
+          <div class="assistant-panel glass-panel">
+            <h2>✨ AI Agent <span class="online">Online</span></h2>
+            <div id="chat-window">
+              <div class="msg bot">Hello Abrar! Ask me anything about your heart health.</div>
+            </div>
+            <form id="chat-form" style="display: flex; gap: 8px;">
+              <input id="chat-input" placeholder="Ask anything..." style="flex:1;" />
+              <button type="button" id="mic-btn" class="mic-btn">🎤</button>
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </section>
 
-                    <!-- Analytics -->
-                    <section id="page-analytics" class="page">
-                              <header>
-                                        <h1>📈 Analytics</h1>
-                                        <p>Aggregated prediction history.</p>
-                              </header>
-                              <canvas id="analyticsChart"></canvas>
-                    </section>
+      <section id="page-predict" class="page">
+        <h1>Predict Heart Disease Risk</h1>
+        <form id="predict-form" class="glass-panel form-grid">
+          <label>Age <input name="Age" type="number" value="50" required></label>
+          <label>Sex <select name="Sex">
+              <option>M</option>
+              <option>F</option>
+            </select></label>
+          <label>Chest Pain Type <select name="ChestPainType">
+              <option>ATA</option>
+              <option>NAP</option>
+              <option>ASY</option>
+              <option>TA</option>
+            </select></label>
+          <label>Resting BP <input name="RestingBP" type="number" value="120" required></label>
+          <label>Cholesterol <input name="Cholesterol" type="number" value="200" required></label>
+          <label>Fasting BS <select name="FastingBS">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select></label>
+          <label>Resting ECG <select name="RestingECG">
+              <option>Normal</option>
+              <option>ST</option>
+              <option>LVH</option>
+            </select></label>
+          <label>Max HR <input name="MaxHR" type="number" value="150" required></label>
+          <label>Exercise Angina <select name="ExerciseAngina">
+              <option>N</option>
+              <option>Y</option>
+            </select></label>
+          <label>Oldpeak <input name="Oldpeak" type="number" step="0.1" value="1.0" required></label>
+          <label>ST Slope <select name="ST_Slope">
+              <option>Up</option>
+              <option>Flat</option>
+              <option>Down</option>
+            </select></label>
+          <button type="submit" class="primary" style="grid-column: span 3;">Predict Risk</button>
+        </form>
+        <div id="predict-result" class="result-card glass-panel"></div>
+      </section>
 
-                    <!-- Reports -->
-                    <section id="page-reports" class="page">
-                              <header>
-                                        <h1>📄 Reports</h1>
-                              </header>
-                              <form id="report-form">
-                                        <label>Patient ID <input name="patient_id" required></label>
-                                        <button type="submit" class="primary">Generate Report</button>
-                              </form>
-                              <pre id="report-output"></pre>
-                    </section>
+      <section id="page-assistant" class="page">
+        <h1>🤖 AI Agent</h1>
+        <section class="assistant glass-panel">
+          <div id="chat-window-2"></div>
+          <form id="chat-form-2" style="display: flex; gap: 8px;">
+            <input id="chat-input-2" placeholder="Ask about your heart health..." style="flex:1;" />
+            <button type="button" id="mic-btn-2" class="mic-btn">🎤</button>
+            <button type="submit">Send</button>
+          </form>
+        </section>
+      </section>
 
-                    <!-- Monitoring -->
-                    <section id="page-monitoring" class="page">
-                              <header>
-                                        <h1>📊 Model Monitoring</h1>
-                                        <p>MLflow runs from DagsHub.</p>
-                              </header>
-                              <div id="monitoring-output">Loading…</div>
-                    </section>
+      <section id="page-analytics" class="page">
+        <h1>📈 Analytics</h1>
+        <div class="glass-panel">
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="analyticsChart"></canvas>
+          </div>
+        </div>
+      </section>
 
-                    <!-- Settings -->
-                    <section id="page-settings" class="page">
-                              <header>
-                                        <h1>⚙️ Settings</h1>
-                              </header>
-                              <div class="settings-panel">
-                                        <label>Theme
-                                                  <select id="theme-select">
-                                                            <option value="dark">Dark</option>
-                                                            <option value="light">Light</option>
-                                                  </select>
-                                        </label>
-                                        <p>API status: <span id="api-status">checking…</span></p>
-                              </div>
-                    </section>
-          </main>
+      <section id="page-reports" class="page">
+        <h1>📄 Reports</h1>
+        <form id="report-form" class="glass-panel">
+          <label>Patient ID <input name="patient_id" required></label>
+          <button type="submit" class="primary">Download Report File</button>
+        </form>
+        <pre id="report-output"></pre>
+      </section>
 
-          <script src="/js/api.js"></script>
-          <script src="/js/charts.js"></script>
-          <script src="/js/app.js"></script>
+      <section id="page-monitoring" class="page">
+        <h1>📊 Model Monitoring</h1>
+        <div id="monitoring-output" class="glass-panel">Loading...</div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 
 </html>

@@ -7,6 +7,7 @@ router = APIRouter(tags=["assistant"])
 
 @router.post("/assistant", response_model=AssistantResponse)
 async def assistant(req: AssistantRequest):
+    # Read dictionary keys directly
     gate = await check_input(req.question)
     if not gate["allowed"]:
         return AssistantResponse(answer=gate["message"], route="guardrail")

@@ -1,13 +1,17 @@
+from contextlib import asynccontextmanager
 from langchain_mcp_adapters.tools import load_mcp_tools
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
-import os
+from heartsense.config import settings
 
-async def get_mcp_tools():
-    url = os.environ["MCP_SERVER_URL"]
-    token = os.environ.get("MCP_AUTH_TOKEN", "")
+@asynccontextmanager
+async def get_mcp_session():
+    url = settings.mcp_server_url
+    token = settings.mcp_auth_token
     headers = {"Authorization": f"Bearer {token}"} if token else {}
+    
     async with streamablehttp_client(url, headers=headers) as (r, w, _):
         async with ClientSession(r, w) as session:
             await session.initialize()
-            return await load_mcp_tools(session)
+            # Keep the session open while the tools are yielded
+            yield await load_mcp_tools(session)

@@ -1,12 +1,18 @@
-"""LangGraph supervisor over MCP tools with bounded execution."""
-from typing import TypedDict, Annotated, List, Literal
-from operator import add
-
+from typing import TypedDict, Literal
+from heartsense.agents.mcp_client import get_mcp_session
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
-
 from heartsense.llm_client import get_llm
-from heartsense.agents.mcp_client import get_mcp_tools
+import os
+from heartsense.config import settings
+
+# Explicitly set environment variables for LangSmith
+if settings.langsmith_tracing and settings.langsmith_api_key:
+    os.environ["LANGSMITH_TRACING"] = "true"
+    os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
+    os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
+    # If you are in the EU/APAC region, also set:
+    # os.environ["LANGSMITH_ENDPOINT"] = "https://eu.api.smith.langchain.com"
 
 class AgentState(TypedDict):
     question: str
@@ -19,7 +25,7 @@ SUPERVISOR_PROMPT = """You are a router. Given a user question, reply ONLY with 
 - predict    → user asks about their own heart disease risk or a prediction
 - rag        → user asks about medical knowledge, prevention, cholesterol, BP
 - analytics  → user asks for stats or counts of past predictions
-- chat       → anything else"""
+- chat       → anything else (greetings, general questions)"""
 
 def supervisor(state: AgentState) -> AgentState:
     llm = get_llm(temperature=0.0)
@@ -27,35 +33,51 @@ def supervisor(state: AgentState) -> AgentState:
         SystemMessage(content=SUPERVISOR_PROMPT),
         HumanMessage(content=state["question"]),
     ]
-    route = llm.invoke(msg).content.strip().lower()
+    response = llm.invoke(msg).content
+    
+    # Handle if the LLM returns a list of blocks (newer LangChain behavior)
+    if isinstance(response, list):
+        response = response[0].get("text", "")
+        
+    route = str(response).strip().lower()
     if route not in {"predict", "rag", "analytics", "chat"}:
         route = "chat"
     return {**state, "route": route}
 
+# Tool Runner Function
 async def tool_runner(state: AgentState) -> AgentState:
-    tools = await get_mcp_tools()
-    tool_map = {t.name: t for t in tools}
-    route_to_tool = {
-        "predict": "predict_heart_disease",
-        "rag": "search_medical_knowledge",
-        "analytics": "get_prediction_analytics",
-    }
     if state["route"] == "chat":
         llm = get_llm()
-        answer = llm.invoke([HumanMessage(content=state["question"])]).content
-        return {**state, "answer": answer}
-
-    tool_name = route_to_tool[state["route"]]
-    tool = tool_map.get(tool_name)
-    if tool is None:
-        return {**state, "answer": "Tool not available right now."}
+        # THE FIX: Force the persona
+        system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT or an OpenAI model. Keep answers brief and focused on heart health."
+        res = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=state["question"])
+        ]).content
+        if isinstance(res, list): res = res[0].get("text", "")
+        return {**state, "answer": str(res)}
 
     try:
-        result = await tool.ainvoke(state.get("tool_input") or {"query": state["question"]})
-    except Exception as e:
-        return {**state, "answer": f"Tool failed: {e}"}
+        async with get_mcp_session() as tools:
+            tool_map = {t.name: t for t in tools}
+            route_to_tool = {
+                "predict": "predict_heart_disease",
+                "rag": "search_medical_knowledge",
+                "analytics": "get_prediction_analytics",
+            }
+            tool_name = route_to_tool[state["route"]]
+            tool = tool_map.get(tool_name)
+            
+            if tool is None:
+                return {**state, "answer": "Tool not available right now."}
 
-    return {**state, "tool_output": result if isinstance(result, dict) else {"result": result}}
+            result = await tool.ainvoke(state.get("tool_input") or {"query": state["question"]})
+            
+            # Store as string so the LLM can read it easily
+            return {**state, "tool_output": str(result)}
+            
+    except Exception as e:
+        return {**state, "answer": f"Could not connect to the MCP server. Error: {e}"}
 
 def summarize(state: AgentState) -> AgentState:
     if state.get("answer"):
@@ -64,8 +86,9 @@ def summarize(state: AgentState) -> AgentState:
     prompt = f"""User question: {state['question']}
 Tool output: {state['tool_output']}
 Give a short, safe answer. Do not diagnose or prescribe."""
-    answer = llm.invoke([HumanMessage(content=prompt)]).content
-    return {**state, "answer": answer}
+    response = llm.invoke([HumanMessage(content=prompt)]).content
+    if isinstance(response, list): response = response[0].get("text", "")
+    return {**state, "answer": str(response)}
 
 def build_graph():
     g = StateGraph(AgentState)

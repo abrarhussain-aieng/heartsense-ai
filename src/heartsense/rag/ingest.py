@@ -3,19 +3,14 @@ import json
 from pathlib import Path
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings  # Use local embeddings
 from langchain_chroma import Chroma
-
-from heartsense.config import settings
 
 SOURCES_FILE = Path(__file__).parent / "sources.json"
 PERSIST_DIR = Path("chroma")
 COLLECTION = "cardiovascular_knowledge"
 
 def ingest():
-    if not settings.gemini_api_key:
-        raise RuntimeError("GEMINI_API_KEY required for Gemini embeddings")
-
     raw = json.loads(SOURCES_FILE.read_text(encoding="utf-8"))
     docs = [
         Document(
@@ -28,10 +23,9 @@ def ingest():
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
     chunks = splitter.split_documents(docs)
 
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
-        google_api_key=settings.gemini_api_key,
-    )
+    # Use a local model - no API keys needed, no 404 errors, instant speed
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,

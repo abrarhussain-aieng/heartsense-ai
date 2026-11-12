@@ -1,30 +1,40 @@
+version: '3.8'
+
 services:
   api:
     build: .
+    container_name: heartsense-api
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      # THE FIX: Tell the API container to talk to the "mcp" container
+      - MCP_SERVER_URL=http://mcp:8001/mcp
+      # Cache HuggingFace models so NeMo doesn't take 3 minutes to download them
+      - HF_HOME=/app/.cache/huggingface
     volumes:
       - ./artifacts:/app/artifacts
-      - ./data:/app/data:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - ./chroma:/app/chroma
+      - ./data:/app/data
+      - ./.cache/huggingface:/app/.cache/huggingface # <-- New Cache Volume
+    depends_on:
+      - mcp
     restart: unless-stopped
 
   mcp:
     build: .
+    container_name: heartsense-mcp
     command: python -m mcp_server.server
     ports:
       - "8001:8001"
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      - HF_HOME=/app/.cache/huggingface
     volumes:
       - ./artifacts:/app/artifacts
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/mcp"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - ./chroma:/app/chroma
+      - ./data:/app/data
+      - ./.cache/huggingface:/app/.cache/huggingface # <-- New Cache Volume
     restart: unless-stopped

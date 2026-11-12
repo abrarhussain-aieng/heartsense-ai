@@ -1,3 +1,4 @@
+import os
 import json
 import joblib
 import numpy as np
@@ -15,6 +16,10 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, reca
 
 from heartsense.config import settings
 from heartsense.data import load_raw, clean, split_xy, NUMERIC, CATEGORICAL, TARGET
+
+
+os.environ["MLFLOW_TRACKING_USERNAME"] = settings.mlflow_tracking_username
+os.environ["MLFLOW_TRACKING_PASSWORD"] = settings.mlflow_tracking_password
 
 ARTIFACT_DIR = Path("artifacts")
 ARTIFACT_DIR.mkdir(exist_ok=True)
@@ -55,40 +60,49 @@ def train():
     }
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    
+    # 1. TRAIN THE MODEL (This happens no matter what)
     search = RandomizedSearchCV(
         pipeline, param_dist, n_iter=30, scoring="roc_auc",
         cv=cv, n_jobs=-1, random_state=42, refit=True,
     )
+    search.fit(X_train, y_train)
+    best = search.best_estimator_
 
-    if settings.mlflow_tracking_uri:
-        mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
-        mlflow.set_experiment(settings.mlflow_experiment)
+    y_pred = best.predict(X_test)
+    y_prob = best.predict_proba(X_test)[:, 1]
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1": f1_score(y_test, y_pred, zero_division=0),
+        "roc_auc": roc_auc_score(y_test, y_prob),
+        "cv_roc_auc": search.best_score_,
+    }
 
-    with mlflow.start_run(run_name="rf_random_search"):
-        search.fit(X_train, y_train)
-        best = search.best_estimator_
+    # 2. SAVE LOCALLY (Crucial for Docker)
+    out_path = ARTIFACT_DIR / "heart_disease_pipeline.joblib"
+    joblib.dump(best, out_path)
+    (ARTIFACT_DIR / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    print("\n✅ Model trained and saved locally!")
 
-        y_pred = best.predict(X_test)
-        y_prob = best.predict_proba(X_test)[:, 1]
-        metrics = {
-            "accuracy": accuracy_score(y_test, y_pred),
-            "precision": precision_score(y_test, y_pred, zero_division=0),
-            "recall": recall_score(y_test, y_pred, zero_division=0),
-            "f1": f1_score(y_test, y_pred, zero_division=0),
-            "roc_auc": roc_auc_score(y_test, y_prob),
-            "cv_roc_auc": search.best_score_,
-        }
+    # 3. TRY TO LOG TO MLFLOW (Fail-safe: won't crash if DagsHub fails)
+    try:
+        if settings.mlflow_tracking_uri:
+            mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
+            mlflow.set_experiment(settings.mlflow_experiment)
 
-        mlflow.log_params(search.best_params_)
-        mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(best, name="model", serialization_format="pickle")
+        with mlflow.start_run(run_name="rf_random_search"):
+            mlflow.log_params(search.best_params_)
+            mlflow.log_metrics(metrics)
+            mlflow.sklearn.log_model(best, name="model", serialization_format="pickle")
+            mlflow.log_artifact(str(out_path))
+            print("✅ Successfully logged to MLflow!")
+    except Exception as e:
+        print(f"\n⚠️ MLflow Logging Failed (Skipping DagsHub upload): {e}")
+        print("The model was still saved locally and is ready for deployment.")
 
-        out_path = ARTIFACT_DIR / "heart_disease_pipeline.joblib"
-        joblib.dump(best, out_path)
-        mlflow.log_artifact(str(out_path))
-
-        (ARTIFACT_DIR / "metrics.json").write_text(json.dumps(metrics, indent=2))
-        return metrics
+    return metrics
 
 if __name__ == "__main__":
     print(train())

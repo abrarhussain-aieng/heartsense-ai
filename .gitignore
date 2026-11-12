@@ -14,3 +14,4 @@ mlruns/
 .pytest_cache/
 .DS_Store
 data/raw/.dvc/cache
+.cache/
