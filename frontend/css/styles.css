@@ -361,15 +361,11 @@ form button[type="submit"]:hover {
   color: #fff;
   outline: none;
   appearance: none;
-  /* Forces custom styling on dropdowns */
 }
 
-/* THIS IS THE FIX: Style the dropdown options to match the dark theme */
 .form-grid select option {
   background-color: #111827;
-  /* Solid dark color */
   color: #ffffff;
-  /* White text */
 }
 
 .result-card {
@@ -415,7 +411,6 @@ form button[type="submit"]:hover {
   color: var(--text);
 }
 
-/* THIS IS THE NEW FIX YOU ASKED FOR: Light mode dropdowns */
 [data-theme="light"] .form-grid input,
 [data-theme="light"] .form-grid select {
   background: rgba(0, 0, 0, 0.05);
@@ -485,17 +480,13 @@ form button[type="submit"]:hover {
    MOBILE RESPONSIVENESS
    ========================================= */
 @media (max-width: 900px) {
-
-  /* 1. Stack the main layout vertically */
   body {
     flex-direction: column;
     height: auto;
     overflow-y: auto;
     overflow-x: hidden;
-    /* Prevent horizontal scrolling */
   }
 
-  /* 2. Make sidebar full width and horizontal */
   .sidebar {
     width: 100%;
     min-width: 100%;
@@ -517,7 +508,6 @@ form button[type="submit"]:hover {
     overflow-x: auto;
     padding-bottom: 5px;
     gap: 10px;
-    /* Hide scrollbar for a clean look */
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
@@ -532,12 +522,10 @@ form button[type="submit"]:hover {
     font-size: 14px;
   }
 
-  /* Hide the promo card and user profile on mobile to save space */
   .sidebar-bottom {
     display: none;
   }
 
-  /* 3. Reset the main content area */
   .main {
     height: auto;
     overflow: visible;
@@ -553,24 +541,20 @@ form button[type="submit"]:hover {
     width: 100%;
   }
 
-  /* 4. Stack the 4 cards into a single column */
   .cards-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
 
-  /* 5. Stack the chart and chat box */
   .dashboard-layout {
     grid-template-columns: 1fr;
     gap: 15px;
   }
 
-  /* Make sure forms look good on mobile */
   .form-grid {
     grid-template-columns: 1fr;
   }
 
-  /* Adjust text sizes for mobile */
   h1 {
     font-size: 24px;
   }
@@ -650,19 +634,50 @@ form button[type="submit"]:hover {
 #auth-form {
   display: flex;
   flex-direction: column;
-  /* Stack vertically instead of horizontally */
   gap: 15px;
 }
 
 #auth-form input {
   width: 100%;
   box-sizing: border-box;
-  /* Ensures padding doesn't break the width */
   margin-bottom: 0;
-  /* Removes old margin since gap handles spacing */
 }
 
 #auth-form button {
   width: 100%;
   margin-top: 5px;
+}
+
+/* PASSWORD VISIBILITY TOGGLE */
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-container input {
+  width: 100%;
+  padding-right: 40px;
+  /* Space for the eye icon */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+  padding: 0;
+  box-shadow: none;
+  width: auto;
+  margin: 0;
+}
+
+.password-toggle:hover {
+  background: transparent;
+  color: var(--text);
+  transform: translateY(-50%) scale(1.1);
 }

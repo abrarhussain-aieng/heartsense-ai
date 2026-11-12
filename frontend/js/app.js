@@ -56,6 +56,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
+  // --- PASSWORD VISIBILITY TOGGLE ---
+  const togglePasswordBtn = document.getElementById("toggle-password");
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener("click", () => {
+      const passwordInput = document.getElementById("auth-password");
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        togglePasswordBtn.textContent = "🙈"; // Hide icon
+      } else {
+        passwordInput.type = "password";
+        togglePasswordBtn.textContent = "👁️"; // Show icon
+      }
+    });
+  }
+  
   // --- 1. THEME SWITCHER ---
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";
@@ -219,7 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
   async function handleChatSubmit(e, inputId, winId, btnElement, micBtnElement) {
     e.preventDefault();
     
-    // THE FIX: Force the microphone to stop the moment we submit
     stopAllListening();
 
     const input = document.getElementById(inputId);
@@ -294,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let isListening = false;
     let finalTranscript = "";
 
-    // Register the recognition object so we can stop it globally
     activeRecognitions.push(recognition);
 
     micBtn.addEventListener("click", () => {
