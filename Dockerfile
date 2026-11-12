@@ -1,7 +1,6 @@
 # --- STAGE 1: Builder ---
 FROM python:3.12-slim AS builder
 
-# Install system dependencies required to compile packages like uvloop
 RUN apt-get update && apt-get install -y --no-install-recommends \
           build-essential \
           libffi-dev \
@@ -10,10 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install uv for faster, more reliable installs
 RUN pip install --no-cache-dir uv
 
-# Install Python dependencies using uv
 COPY requirements.txt .
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
@@ -28,6 +25,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application code
 COPY . .
+
+# THE FIX: Tell Python to look inside the /app/src directory for modules
+ENV PYTHONPATH=/app/src
 
 # Expose the port and run the app
 EXPOSE 8000
