@@ -1,5 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   
+  // Set PDF.js worker path
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
   // --- 1. AUTHENTICATION LOGIC ---
   const authOverlay = document.getElementById("auth-overlay");
   const authForm = document.getElementById("auth-form");
@@ -12,12 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
   
   let isLoginMode = true;
 
-  // Check if user is already logged in
   if (localStorage.getItem("token")) {
     if (authOverlay) authOverlay.style.display = "none";
   }
 
-  // Toggle between Login and Register
   if (toggleLink) {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
@@ -31,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Handle Form Submit
   if (authForm) {
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -53,14 +55,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         
         const data = await res.json();
-        
         if (!res.ok) throw new Error(data.detail || "Authentication failed");
         
         if (isLoginMode) {
           localStorage.setItem("token", data.access_token);
           window.location.reload(); 
         } else {
-          // Auto-login after registration
           const loginRes = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -82,7 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", currentTheme);
-  if (themeToggle) themeToggle.textContent = currentTheme === "dark" ? "🌙" : "☀️";
+  
+  function updateThemeIcon(theme) {
+    if (!themeToggle) return;
+    themeToggle.innerHTML = theme === "dark" ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+  }
+  updateThemeIcon(currentTheme);
 
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
@@ -90,8 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const newTheme = isDark ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", newTheme);
       localStorage.setItem("theme", newTheme);
-      themeToggle.textContent = newTheme === "dark" ? "🌙" : "☀️";
-      
+      updateThemeIcon(newTheme);
       if (location.hash === "#analytics" || location.hash === "#dashboard" || location.hash === "") {
         loadDashboard();
         loadAnalytics();
@@ -125,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- 4. ROUTER ---
-  const pages = ["dashboard", "predict", "assistant", "analytics", "reports", "monitoring"];
+  const pages = ["dashboard", "predict", "assistant", "analytics", "reports", "monitoring", "voice"];
   function showPage(name) {
     if (!pages.includes(name)) name = "dashboard";
     document.querySelectorAll(".page").forEach((el) => el.classList.remove("active"));
@@ -139,7 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setTimeout(() => {
       if (name === "analytics") loadAnalytics();
-      if (name === "dashboard") loadDashboard();
+      if (name === "dashboard") {
+        loadDashboard();
+        if (typeof renderRiskDistribution === "function") renderRiskDistribution();
+      }
       if (name === "monitoring") loadMonitoring();
     }, 100);
   }
@@ -153,7 +160,9 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("total-value").textContent = data.total || 0;
       document.getElementById("risk-value").textContent = data.positive > data.negative ? "Elevated" : "Low Risk";
       document.getElementById("score-value").textContent = (data.total ? Math.round((data.negative / data.total) * 100) : 100) + "/100";
+      
       if (typeof renderHealthChart === "function") renderHealthChart(data.daily);
+      if (typeof renderRiskDistribution === "function") renderRiskDistribution();
     } catch (e) { console.error(e); }
   }
   
@@ -167,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
         out.innerHTML = `<span style="color: #ef4444; font-weight: bold;">❌ Error: ${m.error}</span>`;
         return;
       }
-
       if (m.configured && m.runs && m.runs.length) {
         const best = m.runs[0];
         const acc = best.metrics?.accuracy || best.metrics?.["accuracy"];
@@ -209,26 +217,134 @@ document.addEventListener("DOMContentLoaded", () => {
           ? parseInt(v, 10)
           : k === "Oldpeak" ? parseFloat(v) : v;
       });
-      const box = document.getElementById("predict-result");
-      box.textContent = "Predicting…";
+      performPrediction(payload);
+    });
+  }
+
+  async function performPrediction(payload) {
+    const box = document.getElementById("predict-result");
+    box.textContent = "Predicting…";
+    
+    try {
+      const r = await API.predict(payload);
+      const isHigh = r.probabilities[1] > 0.5;
+      const risk = isHigh ? "High Risk Detected" : "Low Risk";
+      const color = isHigh ? "#ef4444" : "#10b981";
       
+      box.innerHTML = "<h3 style='color: " + color + "; margin-bottom: 10px;'>" + risk + "</h3>" +
+                      "<p>P(low) = " + r.probabilities[0].toFixed(3) + " | P(high) = " + r.probabilities[1].toFixed(3) + "</p>";
+      
+      loadDashboard();
+    } catch (err) {
+      box.textContent = "Error: " + err.message;
+    }
+  }
+
+  // --- 7. UPLOAD REPORT LOGIC (OCR + PDF EXTRACTION) ---
+  const reportUpload = document.getElementById("report-upload");
+  if (reportUpload) {
+    reportUpload.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileType = file.type;
+      let extractedText = "";
+      const resultBox = document.getElementById("predict-result");
+      
+      resultBox.textContent = "Extracting data from report...";
+      window.location.hash = "#predict"; // Switch to predict page to show loading
+
       try {
-        const r = await API.predict(payload);
-        const isHigh = r.probabilities[1] > 0.5;
-        const risk = isHigh ? "High Risk Detected" : "Low Risk";
-        const color = isHigh ? "#ef4444" : "#10b981";
+        if (fileType === "application/json") {
+          // Handle JSON directly
+          const text = await file.text();
+          const data = JSON.parse(text);
+          return performPrediction(data);
+          
+        } else if (fileType === "application/pdf") {
+          // Extract text from PDF
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+          let fullText = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            fullText += textContent.items.map(item => item.str).join(" ") + " ";
+          }
+          extractedText = fullText;
+          
+        } else if (fileType.startsWith("image/")) {
+          // OCR Image using Tesseract.js
+          const result = await Tesseract.recognize(file, 'eng', {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                resultBox.textContent = `Reading image (OCR): ${Math.round(m.progress * 100)}%`;
+              }
+            }
+          });
+          extractedText = result.data.text;
+        }
+
+        // Parse extracted text into vitals
+        resultBox.textContent = "Analyzing extracted medical data...";
+        const vitals = extractVitalsFromText(extractedText);
+        console.log("Extracted Vitals:", vitals);
         
-        box.innerHTML = "<h3 style='color: " + color + "; margin-bottom: 10px;'>" + risk + "</h3>" +
-                        "<p>P(low) = " + r.probabilities[0].toFixed(3) + " | P(high) = " + r.probabilities[1].toFixed(3) + "</p>";
-        
-        loadDashboard();
+        // Send to predict
+        performPrediction(vitals);
+
       } catch (err) {
-        box.textContent = "Error: " + err.message;
+        resultBox.textContent = "Error processing file: " + err.message;
+        console.error(err);
       }
     });
   }
 
-  // --- 7. VOICE & CHAT LOGIC ---
+  // Regex function to find medical values in the text
+  function extractVitalsFromText(text) {
+    // Defaults (from test.json)
+    const vitals = {
+        Age: 50, Sex: "M", ChestPainType: "ATA", 
+        RestingBP: 120, Cholesterol: 200, FastingBS: 0, 
+        RestingECG: "Normal", MaxHR: 150, ExerciseAngina: "N", 
+        Oldpeak: 1.0, ST_Slope: "Up"
+    };
+
+    const ageMatch = text.match(/Age[:\s]+(\d+)/i);
+    if (ageMatch) vitals.Age = parseInt(ageMatch[1]);
+
+    const sexMatch = text.match(/(?:Sex|Gender)[:\s]+(M|F|Male|Female)/i);
+    if (sexMatch) {
+        const val = sexMatch[1].toLowerCase();
+        vitals.Sex = (val === 'm' || val === 'male') ? 'M' : 'F';
+    }
+
+    const bpMatch = text.match(/(?:Resting\s*BP|Blood\s*Pressure)[:\s]+(\d+)/i);
+    if (bpMatch) vitals.RestingBP = parseInt(bpMatch[1]);
+
+    const cholMatch = text.match(/Cholesterol[:\s]+(\d+)/i);
+    if (cholMatch) vitals.Cholesterol = parseInt(cholMatch[1]);
+
+    const hrMatch = text.match(/(?:Max\s*HR|Heart\s*Rate)[:\s]+(\d+)/i);
+    if (hrMatch) vitals.MaxHR = parseInt(hrMatch[1]);
+
+    return vitals;
+  }
+
+  // --- 8. QUICK ACTIONS LOGIC ---
+  window.triggerRecommendations = function() {
+    window.location.hash = "#assistant";
+    setTimeout(() => {
+      const input = document.getElementById("chat-input-2");
+      const form = document.getElementById("chat-form-2");
+      if (input && form) {
+        input.value = "Based on my latest health data and predictions, what are your top health recommendations for me?";
+        form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+      }
+    }, 300);
+  };
+
+  // --- 9. VOICE & CHAT LOGIC ---
   let activeRecognitions = [];
   function stopAllListening() {
     activeRecognitions.forEach(r => {
@@ -237,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function handleChatSubmit(e, inputId, winId, btnElement, micBtnElement) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     stopAllListening();
 
     const input = document.getElementById(inputId);
@@ -271,12 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const parsed = JSON.parse(errMsg);
         if (parsed.detail) errMsg = parsed.detail;
       } catch (e) {}
-
-      if (errMsg.includes("429") || errMsg.includes("Rate limit") || errMsg.includes("TPD")) {
-        thinking.innerHTML = "<span style='color:#f87171;'>⏳ API Rate Limit reached. Please wait 15 minutes and try again.</span>";
-      } else {
-        thinking.innerHTML = "<span style='color:#f87171;'>" + errMsg + "</span>";
-      }
+      thinking.innerHTML = `<span style="color:#f87171;">${errMsg}</span>`;
     } finally {
       if (btnElement) btnElement.disabled = false;
       if (micBtnElement) micBtnElement.disabled = false;
@@ -293,7 +404,8 @@ document.addEventListener("DOMContentLoaded", () => {
     mainForm.addEventListener("submit", (e) => handleChatSubmit(e, "chat-input-2", "chat-window-2", mainForm.querySelector("button[type='submit']"), document.getElementById("mic-btn-2")));
   }
 
-  function setupVoice(micBtnId, inputId) {
+  // --- VOICE AGENT FIX ---
+  function setupVoice(micBtnId, inputId, isDirectVoice = false) {
     const micBtn = document.getElementById(micBtnId);
     if (!micBtn) return;
     
@@ -305,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SR();
     recognition.lang = "en-US";
-    recognition.continuous = true; 
+    recognition.continuous = false; 
     recognition.interimResults = true; 
     
     let isListening = false;
@@ -320,10 +432,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       isListening = true;
       finalTranscript = "";
-      document.getElementById(inputId).value = "";
+      if (inputId) document.getElementById(inputId).value = "";
       micBtn.classList.add("listening");
-      micBtn.textContent = "🛑 Stop";
-      try { recognition.start(); } catch(e) {}
+      micBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      
+      const statusEl = document.getElementById("voice-status");
+      if (statusEl) statusEl.textContent = "Listening...";
+
+      try { recognition.start(); } catch(e) { console.error(e); }
     });
 
     recognition.onresult = (event) => {
@@ -335,26 +451,46 @@ document.addEventListener("DOMContentLoaded", () => {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      document.getElementById(inputId).value = finalTranscript + interimTranscript;
+      if (inputId) {
+        document.getElementById(inputId).value = finalTranscript + interimTranscript;
+      }
     };
 
     recognition.onend = () => {
       isListening = false;
       micBtn.classList.remove("listening");
-      micBtn.textContent = "🎤";
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+      
+      const statusEl = document.getElementById("voice-status");
+      if (statusEl) statusEl.textContent = "Click to talk";
+
+      if (isDirectVoice && finalTranscript.trim() !== "") {
+        window.location.hash = "#assistant";
+        setTimeout(() => {
+          const chatInput = document.getElementById("chat-input-2");
+          const chatForm = document.getElementById("chat-form-2");
+          if (chatInput && chatForm) {
+            chatInput.value = finalTranscript.trim();
+            chatForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+          }
+        }, 300);
+      }
     };
     
     recognition.onerror = () => {
       isListening = false;
       micBtn.classList.remove("listening");
-      micBtn.textContent = "🎤";
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+      const statusEl = document.getElementById("voice-status");
+      if (statusEl) statusEl.textContent = "Error accessing mic";
     };
   }
   
   setupVoice("mic-btn", "chat-input");
   setupVoice("mic-btn-2", "chat-input-2");
+  setupVoice("mic-btn-voice", null, true); 
 
-  // --- 8. ANALYTICS & REPORTS ---
+  // --- 10. ANALYTICS & REPORTS ---
   async function loadAnalytics() {
     try {
       const data = await API.analytics();

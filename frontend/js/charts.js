@@ -21,7 +21,6 @@ function renderHealthChart(dailyData) {
 
   let labels, dataRisk, dataScore;
 
-  // FIX: If you have less than 6 data points (like 2 predictions), use mock data for a beautiful chart
   if (!dailyData || dailyData.length < 6) {
     labels = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
     dataRisk = [45, 52, 38, 60, 55, 48];
@@ -29,7 +28,7 @@ function renderHealthChart(dailyData) {
   } else {
     labels = dailyData.map(d => d.date);
     dataRisk = dailyData.map(d => d.count);
-    dataScore = dailyData.map(d => Math.min(100, d.count * 1.5 + 40)); // Fake score based on count
+    dataScore = dailyData.map(d => Math.min(100, d.count * 1.5 + 40));
   }
 
   healthChartInstance = new Chart(ctx, {
@@ -69,6 +68,9 @@ function renderRiskDistribution() {
   const ctx = canvas.getContext('2d');
 
   if (riskChartInstance) riskChartInstance.destroy();
+
+  canvas.width = 150;
+  canvas.height = 150;
 
   riskChartInstance = new Chart(ctx, {
     type: 'doughnut',

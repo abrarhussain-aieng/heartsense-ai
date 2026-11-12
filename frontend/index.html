@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
+
+  <!-- LIBRARIES FOR OCR AND PDF EXTRACTION -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body>
@@ -54,7 +58,6 @@
         <i class="fa-solid fa-rocket"></i>
         <h4>Smarter Health.<br>A Healthier You.</h4>
       </div>
-      <!-- UPDATED USER PROFILE WITH LOGOUT -->
       <div class="user-profile" onclick="localStorage.removeItem('token'); window.location.reload();"
         style="cursor: pointer;" title="Click to Logout">
         <div class="avatar">A</div>
@@ -68,12 +71,7 @@
 
   <!-- MAIN CONTENT -->
   <main class="main">
-    <header class="topbar">
-      <div class="search-bar">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search anything... (e.g. &quot;Why is my risk high?&quot;)">
-        <span class="kbd">Ctrl + K</span>
-      </div>
+    <header class="topbar" style="justify-content: flex-end;">
       <div class="top-actions">
         <button id="theme-toggle"><i class="fa-solid fa-moon"></i></button>
         <button class="notification-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
@@ -181,11 +179,13 @@
           <div class="glass-panel actions-panel">
             <h2>Quick Actions</h2>
             <div class="actions-grid">
-              <button class="action-btn" onclick="location.hash='#reports'"><i
+              <!-- UPDATED FILE INPUT TO ACCEPT IMAGES AND PDFs -->
+              <input type="file" id="report-upload" style="display: none;" accept="image/*,.pdf,.json">
+              <button class="action-btn" onclick="document.getElementById('report-upload').click()"><i
                   class="fa-solid fa-cloud-arrow-up c-blue-bg"></i>Upload Report</button>
               <button class="action-btn" onclick="location.hash='#analytics'"><i
                   class="fa-solid fa-chart-pie c-purple-bg"></i>View Details</button>
-              <button class="action-btn" onclick="location.hash='#assistant'"><i
+              <button class="action-btn" onclick="triggerRecommendations()"><i
                   class="fa-solid fa-lightbulb c-green-bg"></i>Get Recommendations</button>
               <button class="action-btn" onclick="location.hash='#predict'"><i
                   class="fa-solid fa-heart-pulse c-orange-bg"></i>Health Tips</button>
@@ -196,14 +196,15 @@
             <h2>Voice Agent</h2>
             <p style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">Tap to speak with
               your AI assistant</p>
-            <div class="waveform"></div>
+            <div class="waveform" id="waveform"></div>
             <button class="mic-large" id="mic-btn-voice"><i class="fa-solid fa-microphone"></i></button>
-            <p style="text-align: center; color: var(--muted); font-size: 12px; margin-top: 15px;">Click to talk</p>
+            <p id="voice-status" style="text-align: center; color: var(--muted); font-size: 12px; margin-top: 15px;">
+              Click to talk</p>
           </div>
         </div>
       </section>
 
-      <!-- OTHER PAGES (Hidden by default) -->
+      <!-- OTHER PAGES -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
         <form id="predict-form" class="glass-panel form-grid">
@@ -282,7 +283,7 @@
 
       <section id="page-voice" class="page">
         <h1>Voice Agent</h1>
-        <p>Coming soon...</p>
+        <p>Voice is available on the Dashboard.</p>
       </section>
     </div>
   </main>
