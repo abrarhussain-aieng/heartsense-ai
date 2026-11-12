@@ -7,45 +7,128 @@
   <title>HeartSense AI</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
+
+  <!-- Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5Dnpq8KzZ3mIk4DtqFFEUJIVdyu6dad4",
+      authDomain: "heartsense-ai-c5790.firebaseapp.com",
+      projectId: "heartsense-ai-c5790",
+      storageBucket: "heartsense-ai-c5790.firebasestorage.app",
+      messagingSenderId: "633639298482",
+      appId: "1:633639298482:web:883623daeb195d274530ab",
+      measurementId: "G-67SQYGJ5R4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.handleFirebaseLogin = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken();
+
+        const res = await fetch("/api/auth/firebase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_token: idToken })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Backend verification failed");
+        }
+
+        localStorage.setItem("token", idToken);
+        window.location.reload();
+      } catch (error) {
+        console.error("Firebase login error:", error);
+        document.getElementById("auth-error").textContent = error.message;
+      }
+    };
+  </script>
 </head>
 
 <body>
-  <!-- Login/Signup Overlay -->
+  <!-- Split-Screen Login Overlay -->
   <div id="auth-overlay">
-    <div class="auth-box">
-      <h2>HeartSense AI</h2>
-      <p id="auth-error" class="auth-error"></p>
-      <form id="auth-form">
-        <input type="text" id="auth-username" placeholder="Username" required />
-
-        <!-- PROFESSIONAL PASSWORD TOGGLE -->
-        <div class="password-container">
-          <input type="password" id="auth-password" placeholder="Password" required />
-          <button type="button" id="toggle-password" class="password-toggle">
-            <!-- Eye Icon (Visible by default) -->
-            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <!-- Eye-Off Icon (Hidden by default) -->
-            <svg id="eye-off-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-              </path>
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-          </button>
+    <div class="auth-container">
+      <!-- Left Side: Medical Image & Text -->
+      <div class="auth-left">
+        <div class="auth-left-content">
+          <h1>HeartSense AI</h1>
+          <p>Advanced cardiovascular risk prediction powered by Machine Learning and Generative AI. Your health,
+            decoded.</p>
         </div>
+      </div>
 
-        <button type="submit" id="auth-submit-btn" class="primary">Login</button>
-      </form>
-      <p class="auth-toggle">
-        <span id="auth-toggle-text">Don't have an account?</span>
-        <a href="#" id="auth-toggle-link">Sign up</a>
-      </p>
+      <!-- Right Side: Login Form -->
+      <div class="auth-right">
+        <div class="auth-box">
+          <h2>Welcome</h2>
+          <p id="auth-error" class="auth-error"></p>
+
+          <!-- Google Sign-In -->
+          <button type="button" class="primary" onclick="window.handleFirebaseLogin()"
+            style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 15px; margin-bottom: 20px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4" />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853" />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05" />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335" />
+            </svg>
+            Continue with Google
+          </button>
+
+          <div
+            style="display: flex; align-items: center; text-align: center; color: var(--muted); margin-bottom: 20px;">
+            <div style="flex: 1; border-bottom: 1px solid var(--glass-border);"></div>
+            <span style="padding: 0 10px; font-size: 14px;">or</span>
+            <div style="flex: 1; border-bottom: 1px solid var(--glass-border);"></div>
+          </div>
+
+          <!-- Local Login Fallback -->
+          <form id="auth-form">
+            <input type="text" id="auth-username" placeholder="Username" required />
+            <div class="password-container">
+              <input type="password" id="auth-password" placeholder="Password" required />
+              <button type="button" id="toggle-password" class="password-toggle">
+                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg id="eye-off-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                  </path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+            <button type="submit" id="auth-submit-btn" class="primary">Login</button>
+          </form>
+
+          <p class="auth-toggle">
+            <span id="auth-toggle-text">Don't have an account?</span>
+            <a href="#" id="auth-toggle-link">Sign up</a>
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -80,7 +163,7 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN CONTENT (Kept exactly as provided) -->
   <main class="main">
     <header class="topbar" style="justify-content: flex-end;">
       <div class="top-actions">

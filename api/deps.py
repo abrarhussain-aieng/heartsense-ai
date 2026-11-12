@@ -1,8 +1,7 @@
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
-from passlib.context import CryptContext
-import jwt
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from heartsense.config import settings
@@ -10,12 +9,19 @@ from heartsense.config import settings
 DB_PATH = Path("artifacts/history.db")
 DB_PATH.parent.mkdir(exist_ok=True)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+# Initialize Firebase Admin SDK
+# Assumes firebase-service-account.json is in the root directory
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate("firebase-service-account.json")
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        print(f"Warning: Could not initialize Firebase Admin SDK: {e}")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/firebase")
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
-    # Existing predictions table
     conn.execute(
         """CREATE TABLE IF NOT EXISTS predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,48 +31,57 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )"""
     )
-    # NEW: Users table
     conn.execute(
         """CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            hashed_password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT,
+            firebase_uid TEXT UNIQUE,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )"""
     )
     conn.commit()
     conn.close()
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=7) # Token valid for 7 days
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
-
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        return username
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.PyJWTError:
-        raise credentials_exception
+        decoded_token = firebase_auth.verify_id_token(token)
+        email = decoded_token.get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Email not found in token")
+        return email
+    except firebase_auth.InvalidIdTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-# Keep your existing log_prediction function...
+def get_or_create_firebase_user(email: str, name: str, uid: str):
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    
+    if user:
+        if not user[3]:
+            cursor.execute("UPDATE users SET firebase_uid = ? WHERE email = ?", (uid, email))
+            conn.commit()
+    else:
+        cursor.execute(
+            "INSERT INTO users (email, name, firebase_uid) VALUES (?, ?, ?)",
+            (email, name, uid)
+        )
+        conn.commit()
+        
+    cursor.execute("SELECT email, name FROM users WHERE email = ?", (email,))
+    res = cursor.fetchone()
+    conn.close()
+    return {"email": res[0], "name": res[1] if res[1] else res[0]}
+
 def log_prediction(prediction: int, p0: float, p1: float):
     init_db()
     conn = sqlite3.connect(DB_PATH)
