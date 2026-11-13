@@ -22,23 +22,18 @@
 [data-theme="light"] {
   /* Premium Light Theme */
   --bg: #f1f5f9;
-  /* Soft slate background */
   --panel: rgba(255, 255, 255, 0.75);
-  /* Glassy white */
   --glass-border: rgba(0, 0, 0, 0.06);
-  /* Very subtle borders */
   --text: #0f172a;
   --muted: #64748b;
   --primary: #2563eb;
 
-  /* Vibrant but softer gradients for light mode */
   --card-blue: linear-gradient(135deg, #60a5fa, #3b82f6);
   --card-purple: linear-gradient(135deg, #c084fc, #8b5cf6);
   --card-green: linear-gradient(135deg, #34d399, #10b981);
   --card-orange: linear-gradient(135deg, #fbbf24, #f59e0b);
 
   --shadow-panel: 0 10px 40px rgba(0, 0, 0, 0.04);
-  /* Very soft, diffuse shadow */
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --scrollbar-hover: rgba(0, 0, 0, 0.25);
 }
@@ -50,7 +45,7 @@
   padding: 0;
 }
 
-/* FIX: Custom Scrollbar for both themes to remove the ugly white line */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -84,7 +79,7 @@ h4 {
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* SIDEBAR */
+/* SIDEBAR BASE */
 .sidebar {
   width: 260px;
   background: var(--panel);
@@ -791,4 +786,45 @@ h4 {
   .bottom-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* =========================================
+   LIGHT THEME SIDEBAR OVERRIDE (BLUE)
+   ========================================= */
+[data-theme="light"] .sidebar {
+  background: linear-gradient(180deg, #1e40af, #1e3a8a);
+  /* Premium Blue Gradient */
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .sidebar .brand h2,
+[data-theme="light"] .sidebar .brand p,
+[data-theme="light"] .sidebar nav a,
+[data-theme="light"] .sidebar .user-profile p {
+  color: #f8fafc;
+  /* White text on blue */
+}
+
+[data-theme="light"] .sidebar nav a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .sidebar nav a.active {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  color: #ffffff;
+}
+
+[data-theme="light"] .sidebar-btn {
+  background: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .sidebar-btn:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .promo-card {
+  background: linear-gradient(135deg, #1e3a8a, #312e81);
 }

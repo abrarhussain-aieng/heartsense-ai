@@ -300,19 +300,14 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (file.type.startsWith("image/")) {
           resultBox.textContent = "Analyzing image via Mistral OCR (Puter.js)...";
           
-          // Call Puter's OCR API
-          const response = await puter.ai.ocr({ file: file });
+          // CORRECTED PUTER.JS API CALL: img2txt with mistral provider
+          extractedText = await puter.ai.img2txt(file, { provider: "mistral" });
           
-          if (!response) throw new Error("Could not extract text from image.");
-          
-          // Puter returns either a string or an object with a 'text' property
-          extractedText = response.text || response;
+          if (!extractedText || extractedText.trim() === "") {
+            throw new Error("Could not extract text from the image.");
+          }
         } else {
           throw new Error("Unsupported file format. Please upload JSON, PDF, or an Image.");
-        }
-
-        if (!extractedText || extractedText.trim() === "") {
-          throw new Error("No text could be extracted from the file.");
         }
 
         resultBox.textContent = "Analyzing extracted medical data...";
