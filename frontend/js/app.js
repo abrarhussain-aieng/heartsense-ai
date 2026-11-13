@@ -264,27 +264,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. UPLOAD REPORT LOGIC ---
+  // --- 7. UPLOAD REPORT LOGIC (Using Puter.js + Mistral OCR) ---
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      const fileType = file.type;
-      let extractedText = "";
       const resultBox = document.getElementById("predict-result");
-      
       resultBox.textContent = "Extracting data from report...";
       window.location.hash = "#predict";
 
       try {
-        if (fileType === "application/json") {
+        let extractedText = "";
+
+        // Handle JSON directly
+        if (file.type === "application/json") {
           const text = await file.text();
           const data = JSON.parse(text);
           return performPrediction(data);
           
-        } else if (fileType === "application/pdf") {
+        // Handle PDF locally using pdf.js
+        } else if (file.type === "application/pdf") {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
           let fullText = "";
@@ -295,15 +296,23 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           extractedText = fullText;
           
-        } else if (fileType.startsWith("image/")) {
-          const result = await Tesseract.recognize(file, 'eng', {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                resultBox.textContent = `Reading image (OCR): ${Math.round(m.progress * 100)}%`;
-              }
-            }
-          });
-          extractedText = result.data.text;
+        // Handle Images using Puter.js (Free Mistral OCR)
+        } else if (file.type.startsWith("image/")) {
+          resultBox.textContent = "Analyzing image via Mistral OCR (Puter.js)...";
+          
+          // Call Puter's OCR API
+          const response = await puter.ai.ocr({ file: file });
+          
+          if (!response) throw new Error("Could not extract text from image.");
+          
+          // Puter returns either a string or an object with a 'text' property
+          extractedText = response.text || response;
+        } else {
+          throw new Error("Unsupported file format. Please upload JSON, PDF, or an Image.");
+        }
+
+        if (!extractedText || extractedText.trim() === "") {
+          throw new Error("No text could be extracted from the file.");
         }
 
         resultBox.textContent = "Analyzing extracted medical data...";
@@ -312,6 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       } catch (err) {
         resultBox.textContent = "Error processing file: " + err.message;
+        console.error(err);
       }
     });
   }

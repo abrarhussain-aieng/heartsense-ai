@@ -143,21 +143,23 @@ function renderRiskDistribution() {
 }
 
 // --- ANALYTICS PAGE CHART (Smooth Area Chart) ---
-function renderAnalyticsChart(dailyData) {
-  const canvas = document.getElementById('analyticsChart');
+// --- MAIN DASHBOARD CHART (Date by Date) ---
+function renderHealthChart(dailyData) {
+  const canvas = document.getElementById('healthChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  if (analyticsChartInstance) analyticsChartInstance.destroy();
-  
+
+  if (healthChartInstance) healthChartInstance.destroy();
+
   let labels = [];
   let data = [];
 
-  // Process data day by day
+  // If we have data, plot it exactly as it comes from the database
   if (dailyData && dailyData.length > 0) {
-    // Sort by date ascending
+    // Sort dates from oldest to newest
     dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Use the raw date string (YYYY-MM-DD) for the X-axis to match localhost
+    // Use the exact date string (e.g., '2026-11-08')
     labels = dailyData.map(d => d.date);
     data = dailyData.map(d => d.count);
   } else {
@@ -165,30 +167,22 @@ function renderAnalyticsChart(dailyData) {
     data = [0];
   }
 
-  // Create the beautiful purple gradient fill
-  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); // Purple top
-  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');   // Transparent bottom
-
-  analyticsChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: { 
-      labels: labels, 
-      datasets: [{ 
-        label: 'Daily Predictions', 
-        data: data, 
-        borderColor: '#8b5cf6', // Purple line
-        backgroundColor: gradient,
-        borderWidth: 3,
-        pointBackgroundColor: '#8b5cf6',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        fill: true, 
-        tension: 0.4 // Smooth curve
-      }] 
+  healthChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Predictions',
+          data: data,
+          backgroundColor: '#3b82f6', // Blue bars
+          borderRadius: 6,
+          barThickness: 'flex',
+          maxBarThickness: 40
+        }
+      ]
     },
-    options: getChartOptions(true) // Show legend for Analytics page
+    // Using your existing theme-aware chart options
+    options: getChartOptions(false) 
   });
 }
