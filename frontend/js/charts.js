@@ -2,17 +2,44 @@ let healthChartInstance = null;
 let riskChartInstance = null;
 let analyticsChartInstance = null;
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
-    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
-  }
-};
+// Helper to get theme colors
+function getChartTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return {
+    textColor: isDark ? '#94a3b8' : '#64748b',
+    gridColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    tooltipBg: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+    tooltipText: isDark ? '#f8fafc' : '#0f172a',
+    tooltipBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+  };
+}
 
-// Helper to get the last 6 months dynamically (e.g., "Jun", "Jul", "Aug", "Sep", "Oct", "Nov")
+function getChartOptions(showLegend = false) {
+  const theme = getChartTheme();
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { 
+        display: showLegend,
+        labels: { color: theme.textColor, font: { family: 'Inter', size: 12 } }
+      },
+      tooltip: {
+        backgroundColor: theme.tooltipBg,
+        titleColor: theme.tooltipText,
+        bodyColor: theme.textColor,
+        borderColor: theme.tooltipBorder,
+        borderWidth: 1,
+        padding: 10
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: theme.textColor } },
+      y: { grid: { color: theme.gridColor }, ticks: { color: theme.textColor }, beginAtZero: true }
+    }
+  };
+}
+
 function getLast6Months() {
   const months = [];
   const d = new Date();
@@ -23,6 +50,7 @@ function getLast6Months() {
   return months;
 }
 
+// --- MAIN DASHBOARD CHART (Bar + Line) ---
 function renderHealthChart(dailyData) {
   const canvas = document.getElementById('healthChart');
   if (!canvas) return;
@@ -34,7 +62,6 @@ function renderHealthChart(dailyData) {
   const riskData = [0, 0, 0, 0, 0, 0];
   const scoreData = [0, 0, 0, 0, 0, 0];
 
-  // Map actual data to the last 6 months
   if (dailyData && dailyData.length > 0) {
     dailyData.forEach(item => {
       const itemDate = new Date(item.date);
@@ -43,16 +70,15 @@ function renderHealthChart(dailyData) {
       
       if (monthIndex !== -1) {
         riskData[monthIndex] += item.count;
-        // Generate a dynamic health score based on prediction volume
         scoreData[monthIndex] = Math.min(100, scoreData[monthIndex] + (item.count * 10));
       }
     });
   }
 
-  // Fill score data with some baseline if there's risk data but no score
+  // Fill empty months with baseline data so the chart doesn't look empty
   for(let i=0; i<6; i++) {
      if(riskData[i] > 0 && scoreData[i] === 0) scoreData[i] = 80;
-     if(riskData[i] === 0 && scoreData[i] === 0) scoreData[i] = 50; // Default flatline
+     if(riskData[i] === 0 && scoreData[i] === 0) scoreData[i] = 50;
   }
 
   healthChartInstance = new Chart(ctx, {
@@ -82,10 +108,11 @@ function renderHealthChart(dailyData) {
         }
       ]
     },
-    options: chartOptions
+    options: getChartOptions(false)
   });
 }
 
+// --- DOUGHNUT CHART ---
 function renderRiskDistribution() {
   const canvas = document.getElementById('riskChart');
   if (!canvas) return;
@@ -115,6 +142,7 @@ function renderRiskDistribution() {
   });
 }
 
+// --- ANALYTICS PAGE CHART (Smooth Area Chart) ---
 function renderAnalyticsChart(dailyData) {
   const canvas = document.getElementById('analyticsChart');
   if (!canvas) return;
@@ -124,32 +152,43 @@ function renderAnalyticsChart(dailyData) {
   let labels = [];
   let data = [];
 
+  // Process data day by day
   if (dailyData && dailyData.length > 0) {
-    // Sort by date
+    // Sort by date ascending
     dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
-    labels = dailyData.map(d => {
-      const dt = new Date(d.date);
-      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    });
+    
+    // Use the raw date string (YYYY-MM-DD) for the X-axis to match localhost
+    labels = dailyData.map(d => d.date);
     data = dailyData.map(d => d.count);
   } else {
     labels = ['No Data'];
     data = [0];
   }
 
+  // Create the beautiful purple gradient fill
+  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); // Purple top
+  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');   // Transparent bottom
+
   analyticsChartInstance = new Chart(ctx, {
     type: 'line',
     data: { 
       labels: labels, 
       datasets: [{ 
-        label: 'Total Predictions', 
+        label: 'Daily Predictions', 
         data: data, 
-        borderColor: '#3b82f6', 
+        borderColor: '#8b5cf6', // Purple line
+        backgroundColor: gradient,
+        borderWidth: 3,
+        pointBackgroundColor: '#8b5cf6',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
         fill: true, 
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4
+        tension: 0.4 // Smooth curve
       }] 
     },
-    options: chartOptions
+    options: getChartOptions(true) // Show legend for Analytics page
   });
 }
