@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. UPLOAD REPORT LOGIC (Using Chrome Lens OCR) ---
+  // --- 7. UPLOAD REPORT LOGIC (Chrome Lens + Tesseract Fallback) ---
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
@@ -298,41 +298,70 @@ document.addEventListener("DOMContentLoaded", () => {
           extractedText = fullText;
         }
         
-        // 3. Handle Images using Chrome Lens OCR
+        // 3. Handle Images (Try Chrome Lens, Fallback to Tesseract)
         if (file.type.startsWith("image/")) {
-          resultBox.textContent = "Running Chrome Lens OCR...";
+          resultBox.textContent = "Running OCR (Chrome Lens)...";
           
-          // Dynamically import the browser-compatible LensCore
-          const { LensCore } = await import('https://esm.sh/@rxliuli/chrome-lens-ocr/core');
-          const lens = new LensCore();
-          
-          // Convert File to Uint8Array
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          
-          // Get image dimensions
-          const img = new Image();
-          const imageLoadPromise = new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-          });
-          img.src = URL.createObjectURL(file);
-          await imageLoadPromise;
-          
-          // Run OCR
-          const result = await lens.scanByData(uint8Array, file.type, [img.width, img.height]);
-          
-          // Extract text from result
-          if (result && typeof result === 'object' && result.text) {
-            extractedText = result.text;
-          } else if (typeof result === 'string') {
-            extractedText = result;
-          } else {
-            throw new Error("OCR returned no text.");
+          try {
+            // Attempt Chrome Lens OCR
+            const { LensCore } = await import('https://esm.sh/@rxliuli/chrome-lens-ocr/core');
+            const lens = new LensCore();
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            const img = new Image();
+            const imageLoadPromise = new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+            });
+            img.src = URL.createObjectURL(file);
+            await imageLoadPromise;
+            
+            const result = await lens.scanByData(uint8Array, file.type, [img.width, img.height]);
+            URL.revokeObjectURL(img.src);
+
+            // Extract text safely
+            if (result && result.text) {
+              extractedText = result.text;
+            } else if (result && result.lines) {
+              extractedText = result.lines.map(l => l.text).join("\n");
+            } else if (typeof result === 'string') {
+              extractedText = result;
+            }
+
+            if (!extractedText || extractedText.trim() === "") {
+              throw new Error("Chrome Lens returned empty text.");
+            }
+            
+          } catch (lensError) {
+            console.warn("Chrome Lens failed, falling back to Tesseract.js:", lensError);
+            resultBox.textContent = "Lens failed. Running fallback OCR (Tesseract)...";
+            
+            // FALLBACK: Load Tesseract.js dynamically
+            if (typeof Tesseract === 'undefined') {
+              await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+              });
+            }
+
+            const { data: { text } } = await Tesseract.recognize(
+              file,
+              'eng',
+              {
+                logger: m => {
+                  if (m.status === 'recognizing text') {
+                    resultBox.textContent = `Fallback OCR: ${Math.round(m.progress * 100)}%`;
+                  }
+                }
+              }
+            );
+            extractedText = text;
           }
-          
-          // Clean up the object URL
-          URL.revokeObjectURL(img.src);
         }
 
         // 4. Validate and proceed
