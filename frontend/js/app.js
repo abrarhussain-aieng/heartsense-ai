@@ -44,7 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
       authTitle.textContent = isLoginMode ? "Welcome Back" : "Create Account";
-      submitBtn.textContent = isLoginMode ? "Login" : "Sign Up";
+      
+      // Use innerHTML to keep the FontAwesome icons
+      if (isLoginMode) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login';
+      } else {
+        submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Sign Up';
+      }
+      
       toggleText.textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
       toggleLink.textContent = isLoginMode ? "Sign up" : "Login";
       nameGroup.style.display = isLoginMode ? "none" : "block";
@@ -98,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 2. THEME SWITCHER (UPDATED FOR SIDEBAR) ---
+  // --- 2. THEME SWITCHER ---
   const themeToggle = document.getElementById("theme-toggle");
   const currentTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", currentTheme);
@@ -264,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. UPLOAD REPORT LOGIC (Chrome Lens + Tesseract Fallback) ---
+  // --- 7. UPLOAD REPORT LOGIC (Pure Tesseract.js OCR) ---
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
@@ -272,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!file) return;
 
       const resultBox = document.getElementById("predict-result");
-      resultBox.textContent = "Extracting data from report...";
+      resultBox.textContent = "Initializing OCR engine...";
       window.location.hash = "#predict";
 
       try {
@@ -284,8 +291,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = JSON.parse(text);
           return performPrediction(data);
         }
-        
-        // 2. Handle PDF locally using pdf.js
+
+        // 2. Handle PDFs using pdf.js
         if (file.type === "application/pdf") {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
@@ -297,71 +304,39 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           extractedText = fullText;
         }
-        
-        // 3. Handle Images (Try Chrome Lens, Fallback to Tesseract)
+
+        // 3. Handle Images using Tesseract.js (No Lens)
         if (file.type.startsWith("image/")) {
-          resultBox.textContent = "Running OCR (Chrome Lens)...";
+          resultBox.textContent = "Loading Tesseract.js...";
           
-          try {
-            // Attempt Chrome Lens OCR
-            const { LensCore } = await import('https://esm.sh/@rxliuli/chrome-lens-ocr/core');
-            const lens = new LensCore();
-            
-            const arrayBuffer = await file.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            
-            const img = new Image();
-            const imageLoadPromise = new Promise((resolve, reject) => {
-              img.onload = resolve;
-              img.onerror = reject;
+          // Dynamically load Tesseract.js
+          if (typeof Tesseract === 'undefined') {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
             });
-            img.src = URL.createObjectURL(file);
-            await imageLoadPromise;
-            
-            const result = await lens.scanByData(uint8Array, file.type, [img.width, img.height]);
-            URL.revokeObjectURL(img.src);
+          }
 
-            // Extract text safely
-            if (result && result.text) {
-              extractedText = result.text;
-            } else if (result && result.lines) {
-              extractedText = result.lines.map(l => l.text).join("\n");
-            } else if (typeof result === 'string') {
-              extractedText = result;
-            }
+          resultBox.textContent = "Running OCR (this may take a few seconds)...";
 
-            if (!extractedText || extractedText.trim() === "") {
-              throw new Error("Chrome Lens returned empty text.");
-            }
-            
-          } catch (lensError) {
-            console.warn("Chrome Lens failed, falling back to Tesseract.js:", lensError);
-            resultBox.textContent = "Lens failed. Running fallback OCR (Tesseract)...";
-            
-            // FALLBACK: Load Tesseract.js dynamically
-            if (typeof Tesseract === 'undefined') {
-              await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-              });
-            }
-
-            const { data: { text } } = await Tesseract.recognize(
-              file,
-              'eng',
-              {
-                logger: m => {
-                  if (m.status === 'recognizing text') {
-                    resultBox.textContent = `Fallback OCR: ${Math.round(m.progress * 100)}%`;
-                  }
+          // Run Tesseract with progress logging
+          const { data: { text } } = await Tesseract.recognize(
+            file,
+            'eng', 
+            {
+              logger: m => {
+                if (m.status === 'recognizing text') {
+                  const progress = Math.round(m.progress * 100);
+                  resultBox.textContent = `Reading image: ${progress}%`;
                 }
               }
-            );
-            extractedText = text;
-          }
+            }
+          );
+          
+          extractedText = text;
         }
 
         // 4. Validate and proceed
