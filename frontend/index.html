@@ -9,8 +9,7 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
 
-  <!-- Added Puter.js for free Mistral OCR -->
-  <script src="https://js.puter.com/v2/"></script>
+  <!-- pdf.js for PDF extraction (Puter.js removed) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
@@ -54,7 +53,6 @@
     </nav>
 
     <div class="sidebar-bottom">
-      <!-- MOVED THEME TOGGLE HERE -->
       <button id="theme-toggle" class="sidebar-btn">
         <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
       </button>
@@ -202,7 +200,7 @@
         </div>
       </section>
 
-      <!-- OTHER PAGES (Hidden by default) -->
+      <!-- OTHER PAGES -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
         <form id="predict-form" class="glass-panel form-grid">

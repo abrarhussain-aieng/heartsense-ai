@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. UPLOAD REPORT LOGIC (Using Puter.js + Mistral OCR) ---
+  // --- 7. UPLOAD REPORT LOGIC (Using Chrome Lens OCR) ---
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
@@ -278,14 +278,15 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         let extractedText = "";
 
-        // Handle JSON directly
+        // 1. Handle JSON directly
         if (file.type === "application/json") {
           const text = await file.text();
           const data = JSON.parse(text);
           return performPrediction(data);
-          
-        // Handle PDF locally using pdf.js
-        } else if (file.type === "application/pdf") {
+        }
+        
+        // 2. Handle PDF locally using pdf.js
+        if (file.type === "application/pdf") {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
           let fullText = "";
@@ -295,19 +296,48 @@ document.addEventListener("DOMContentLoaded", () => {
             fullText += textContent.items.map(item => item.str).join(" ") + " ";
           }
           extractedText = fullText;
+        }
+        
+        // 3. Handle Images using Chrome Lens OCR
+        if (file.type.startsWith("image/")) {
+          resultBox.textContent = "Running Chrome Lens OCR...";
           
-        // Handle Images using Puter.js (Free Mistral OCR)
-        } else if (file.type.startsWith("image/")) {
-          resultBox.textContent = "Analyzing image via Mistral OCR (Puter.js)...";
+          // Dynamically import the browser-compatible LensCore
+          const { LensCore } = await import('https://esm.sh/@rxliuli/chrome-lens-ocr/core');
+          const lens = new LensCore();
           
-          // CORRECTED PUTER.JS API CALL: img2txt with mistral provider
-          extractedText = await puter.ai.img2txt(file, { provider: "mistral" });
+          // Convert File to Uint8Array
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
           
-          if (!extractedText || extractedText.trim() === "") {
-            throw new Error("Could not extract text from the image.");
+          // Get image dimensions
+          const img = new Image();
+          const imageLoadPromise = new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+          img.src = URL.createObjectURL(file);
+          await imageLoadPromise;
+          
+          // Run OCR
+          const result = await lens.scanByData(uint8Array, file.type, [img.width, img.height]);
+          
+          // Extract text from result
+          if (result && typeof result === 'object' && result.text) {
+            extractedText = result.text;
+          } else if (typeof result === 'string') {
+            extractedText = result;
+          } else {
+            throw new Error("OCR returned no text.");
           }
-        } else {
-          throw new Error("Unsupported file format. Please upload JSON, PDF, or an Image.");
+          
+          // Clean up the object URL
+          URL.revokeObjectURL(img.src);
+        }
+
+        // 4. Validate and proceed
+        if (!extractedText || extractedText.trim() === "") {
+          throw new Error("No text could be extracted from the file.");
         }
 
         resultBox.textContent = "Analyzing extracted medical data...";
@@ -315,8 +345,8 @@ document.addEventListener("DOMContentLoaded", () => {
         performPrediction(vitals);
 
       } catch (err) {
-        resultBox.textContent = "Error processing file: " + err.message;
-        console.error(err);
+        console.error("OCR Error:", err);
+        resultBox.textContent = "Error processing file: " + (err.message || "Unknown error");
       }
     });
   }
