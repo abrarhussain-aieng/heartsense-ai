@@ -10,7 +10,13 @@ app = FastAPI(title="HeartSense AI", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://heartsense-ai.duckdns.org",  # Your new secure production domain
+        "http://3.25.121.3",                  # Your original EC2 IP (fallback)
+        "http://localhost:3000",              # For local frontend development
+        "http://localhost:8000"               # For local FastAPI docs testing
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
