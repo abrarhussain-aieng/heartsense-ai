@@ -270,7 +270,14 @@ document.addEventListener("DOMContentLoaded", () => {
       
       loadDashboard();
     } catch (err) {
-      box.textContent = "Error: " + err.message;
+      let errMsg = err.message || "Unknown error";
+      
+      // GRACEFUL 502 ERROR HANDLING FOR PREDICTIONS
+      if (errMsg.includes("502") || errMsg.includes("Bad Gateway") || errMsg.includes("<!DOCTYPE")) {
+        box.innerHTML = `<div style="color: #fbbf24; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating. Please wait 10 seconds and try again.</div>`;
+      } else {
+        box.textContent = "Error: " + errMsg;
+      }
     }
   }
 
@@ -347,7 +354,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       } catch (err) {
         console.error("OCR Error:", err);
-        resultBox.textContent = "Error processing file: " + (err.message || "Unknown error");
+        let msg = err.message || "Unknown error";
+        
+        if (msg.includes("502") || msg.includes("Bad Gateway") || msg.includes("<!DOCTYPE")) {
+           resultBox.innerHTML = `<div style="color: #fbbf24; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</div>`;
+        } else if (msg.includes("does not contain relevant patient medical vitals")) {
+           resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-file-circle-xmark"></i> The uploaded document is not relevant. Please upload a valid medical report (JPG, PNG, PDF) containing vitals like Age, Blood Pressure, and Cholesterol.</div>`;
+        } else {
+           resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center;">${msg}</div>`;
+        }
       }
     });
   }
@@ -359,19 +374,32 @@ document.addEventListener("DOMContentLoaded", () => {
         RestingECG: "Normal", MaxHR: 150, ExerciseAngina: "N", 
         Oldpeak: 1.0, ST_Slope: "Up"
     };
+    let matches = 0;
+
     const ageMatch = text.match(/Age[:\s]+(\d+)/i);
-    if (ageMatch) vitals.Age = parseInt(ageMatch[1]);
+    if (ageMatch) { vitals.Age = parseInt(ageMatch[1]); matches++; }
+    
     const sexMatch = text.match(/(?:Sex|Gender)[:\s]+(M|F|Male|Female)/i);
     if (sexMatch) {
         const val = sexMatch[1].toLowerCase();
         vitals.Sex = (val === 'm' || val === 'male') ? 'M' : 'F';
+        matches++;
     }
+    
     const bpMatch = text.match(/(?:Resting\s*BP|Blood\s*Pressure)[:\s]+(\d+)/i);
-    if (bpMatch) vitals.RestingBP = parseInt(bpMatch[1]);
+    if (bpMatch) { vitals.RestingBP = parseInt(bpMatch[1]); matches++; }
+    
     const cholMatch = text.match(/Cholesterol[:\s]+(\d+)/i);
-    if (cholMatch) vitals.Cholesterol = parseInt(cholMatch[1]);
+    if (cholMatch) { vitals.Cholesterol = parseInt(cholMatch[1]); matches++; }
+    
     const hrMatch = text.match(/(?:Max\s*HR|Heart\s*Rate)[:\s]+(\d+)/i);
-    if (hrMatch) vitals.MaxHR = parseInt(hrMatch[1]);
+    if (hrMatch) { vitals.MaxHR = parseInt(hrMatch[1]); matches++; }
+
+    // If fewer than 2 vitals are found, the document is likely irrelevant
+    if (matches < 2) {
+      throw new Error("The uploaded report does not contain relevant patient medical vitals.");
+    }
+    
     return vitals;
   }
 
@@ -428,7 +456,6 @@ document.addEventListener("DOMContentLoaded", () => {
       clearInterval(thinkInterval);
       let errMsg = err.message || "Unknown error";
       
-      // GRACEFUL 502 ERROR HANDLING
       if (errMsg.includes("502") || errMsg.includes("Bad Gateway") || errMsg.includes("<!DOCTYPE")) {
         thinking.innerHTML = `<span style="color:#fbbf24;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</span>`;
       } else {
