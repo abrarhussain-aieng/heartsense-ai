@@ -14,6 +14,12 @@
 </head>
 
 <body>
+  <!-- MOBILE MENU BUTTON & OVERLAY -->
+  <button class="mobile-menu-btn" id="mobile-menu-btn">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
   <!-- CLEAN CENTERED LOGIN OVERLAY -->
   <div id="auth-overlay">
     <div class="auth-box">
@@ -65,7 +71,7 @@
   </div>
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="logo-icon"><i class="fa-solid fa-heart-pulse"></i></div>
       <div>
@@ -238,53 +244,41 @@
       <!-- OTHER PAGES -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
-        <!-- ADDED HTML5 VALIDATION MIN/MAX LIMITS HERE -->
         <form id="predict-form" class="glass-panel form-grid">
           <label>Age <input name="Age" type="number" value="50" min="1" max="120" required></label>
-
           <label>Sex <select name="Sex">
               <option>M</option>
               <option>F</option>
             </select></label>
-
           <label>Chest Pain Type <select name="ChestPainType">
               <option>ATA</option>
               <option>NAP</option>
               <option>ASY</option>
               <option>TA</option>
             </select></label>
-
           <label>Resting BP <input name="RestingBP" type="number" value="120" min="50" max="250" required></label>
-
           <label>Cholesterol <input name="Cholesterol" type="number" value="200" min="50" max="700" required></label>
-
           <label>Fasting BS <select name="FastingBS">
               <option value="0">No</option>
               <option value="1">Yes</option>
             </select></label>
-
           <label>Resting ECG <select name="RestingECG">
               <option>Normal</option>
               <option>ST</option>
               <option>LVH</option>
             </select></label>
-
           <label>Max HR <input name="MaxHR" type="number" value="150" min="40" max="250" required></label>
-
           <label>Exercise Angina <select name="ExerciseAngina">
               <option>N</option>
               <option>Y</option>
             </select></label>
-
           <label>Oldpeak <input name="Oldpeak" type="number" step="0.1" value="1.0" min="-5.0" max="10.0"
               required></label>
-
           <label>ST Slope <select name="ST_Slope">
               <option>Up</option>
               <option>Flat</option>
               <option>Down</option>
             </select></label>
-
           <button type="submit" class="btn-primary" style="grid-column: span 3;">Predict Risk</button>
         </form>
         <div id="predict-result" class="result-card glass-panel"></div>

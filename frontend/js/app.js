@@ -268,14 +268,11 @@ document.addEventListener("DOMContentLoaded", () => {
       box.innerHTML = "<h3 style='color: " + color + "; margin-bottom: 10px;'>" + risk + "</h3>" +
                       "<p>P(low) = " + r.probabilities[0].toFixed(3) + " | P(high) = " + r.probabilities[1].toFixed(3) + "</p>";
       
-      // SAVE PAYLOAD FOR THE AI AGENT
       localStorage.setItem("lastPredictionPayload", JSON.stringify(payload));
 
       loadDashboard();
     } catch (err) {
       let errMsg = err.message || "Unknown error";
-      
-      // GRACEFUL 502 ERROR HANDLING FOR PREDICTIONS
       if (errMsg.includes("502") || errMsg.includes("Bad Gateway") || errMsg.includes("<!DOCTYPE")) {
         box.innerHTML = `<div style="color: #fbbf24; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating. Please wait 10 seconds and try again.</div>`;
       } else {
@@ -398,7 +395,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const hrMatch = text.match(/(?:Max\s*HR|Heart\s*Rate)[:\s]+(\d+)/i);
     if (hrMatch) { vitals.MaxHR = parseInt(hrMatch[1]); matches++; }
 
-    // If fewer than 2 vitals are found, the document is likely irrelevant
     if (matches < 2) {
       throw new Error("The uploaded report does not contain relevant patient medical vitals.");
     }
@@ -413,14 +409,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const input = document.getElementById("chat-input-2");
       const form = document.getElementById("chat-form-2");
       
-      // Get the last prediction data if it exists
       const lastPayloadStr = localStorage.getItem("lastPredictionPayload");
       let prompt = "Based on my latest health data and predictions, what are your top health recommendations for me?";
       
       if (lastPayloadStr) {
         try {
           const p = JSON.parse(lastPayloadStr);
-          // Inject the real data into the prompt
           prompt = `My recent health metrics are: Age ${p.Age}, Sex ${p.Sex}, Resting BP ${p.RestingBP}, Cholesterol ${p.Cholesterol}, Max HR ${p.MaxHR}, Exercise Angina ${p.ExerciseAngina}. Based on this data, what are your top health recommendations for me?`;
         } catch(e) {
           console.error("Could not parse last payload", e);
@@ -634,6 +628,35 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentDashboardData && typeof renderHealthChart === "function") {
         renderHealthChart(currentDashboardData, selectedFilter);
       }
+    });
+  }
+
+  // --- 12. MOBILE SIDEBAR SLIDING LOGIC ---
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+  if (mobileMenuBtn && sidebar && sidebarOverlay) {
+    function toggleSidebar() {
+      sidebar.classList.toggle("open");
+      sidebarOverlay.classList.toggle("active");
+      
+      if (sidebar.classList.contains("open")) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+    }
+
+    mobileMenuBtn.addEventListener("click", toggleSidebar);
+    sidebarOverlay.addEventListener("click", toggleSidebar);
+
+    sidebar.querySelectorAll("nav a").forEach(link => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 768 && sidebar.classList.contains("open")) {
+          toggleSidebar();
+        }
+      });
     });
   }
 
