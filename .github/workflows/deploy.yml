@@ -70,7 +70,7 @@ jobs:
             --name heartsense-api \
             --network heartsense-net \
             --restart unless-stopped \
-            -p 80:8000 \
+            -p 8000:8000 \
             --env-file /home/ubuntu/.env \
             -v /home/ubuntu/artifacts:/app/artifacts \
             -v /home/ubuntu/chroma:/app/chroma \
