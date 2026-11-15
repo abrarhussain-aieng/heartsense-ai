@@ -342,28 +342,62 @@ h4 {
 }
 
 .kpi-content h3 {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   opacity: 0.9;
   margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .kpi-content .value {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   font-family: 'Plus Jakarta Sans';
   margin-bottom: 5px;
 }
 
 .kpi-content .trend {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.9;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.text-green {
-  color: #10b981;
+/* =========================================
+   KPI CARD TEXT VISIBILITY FIX (DARK & LIGHT)
+   ========================================= */
+.kpi-content h3 {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
+
+.kpi-content .value {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark Theme Trends */
+[data-theme="dark"] .kpi-card .text-green {
+  color: #4ade80 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .kpi-card .trend[style*="color: #fbbf24"] {
+  color: #fcd34d !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Light Theme Trends (Darker for contrast on bright cards) */
+[data-theme="light"] .kpi-card .text-green {
+  color: #064e3b !important;
+}
+
+[data-theme="light"] .kpi-card .trend[style*="color: #fbbf24"] {
+  color: #78350f !important;
+}
+
+/* ========================================= */
 
 /* MIDDLE GRID */
 .middle-grid {
@@ -450,6 +484,8 @@ h4 {
   background: var(--primary);
   color: white;
   align-self: flex-end;
+  margin-left: auto;
+  /* <--- CHAT ALIGNMENT FIX */
   border-bottom-right-radius: 4px;
 }
 

@@ -40,25 +40,63 @@ function getChartOptions(showLegend = false) {
   };
 }
 
-// --- MAIN DASHBOARD CHART (Date by Date) ---
-function renderHealthChart(dailyData) {
+// Helper to get local YYYY-MM-DD string to avoid timezone bugs
+function getLocalYYYYMMDD(date) {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+}
+
+// --- MAIN DASHBOARD CHART (With Bulletproof Time Filtering) ---
+function renderHealthChart(dailyData, filter = 'all') {
   const canvas = document.getElementById('healthChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
   if (healthChartInstance) healthChartInstance.destroy();
 
+  let filteredData = [];
+  
+  if (dailyData && dailyData.length > 0) {
+    // Sort from oldest to newest
+    dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 1. Get today's date as a YYYY-MM-DD string (Local Time)
+    const todayStr = getLocalYYYYMMDD(new Date());
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalYYYYMMDD(yesterday);
+
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    const lastYear = new Date();
+    lastYear.setFullYear(lastYear.getFullYear() - 1);
+
+    // 2. Filter using exact string matches for today/yesterday and date objects for ranges
+    filteredData = dailyData.filter(item => {
+      if (filter === 'today') return item.date === todayStr;
+      if (filter === 'yesterday') return item.date === yesterdayStr;
+      
+      const itemDate = new Date(item.date);
+      if (filter === 'week') return itemDate >= lastWeek;
+      if (filter === 'month') return itemDate >= lastMonth;
+      if (filter === 'year') return itemDate >= lastYear;
+      
+      return true; // 'all'
+    });
+  }
+
   let labels = [];
   let data = [];
 
-  // If we have data, plot it exactly as it comes from the database
-  if (dailyData && dailyData.length > 0) {
-    // Sort dates from oldest to newest
-    dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    // Use the exact date string (e.g., '2026-11-08')
-    labels = dailyData.map(d => d.date);
-    data = dailyData.map(d => d.count);
+  if (filteredData.length > 0) {
+    labels = filteredData.map(d => d.date);
+    data = filteredData.map(d => d.count);
   } else {
     labels = ['No Data'];
     data = [0];
@@ -72,7 +110,7 @@ function renderHealthChart(dailyData) {
         {
           label: 'Predictions',
           data: data,
-          backgroundColor: '#3b82f6', // Blue bars
+          backgroundColor: '#3b82f6',
           borderRadius: 6,
           barThickness: 'flex',
           maxBarThickness: 40

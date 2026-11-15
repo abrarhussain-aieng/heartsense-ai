@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
       isLoginMode = !isLoginMode;
       authTitle.textContent = isLoginMode ? "Welcome Back" : "Create Account";
       
-      // Use innerHTML to keep the FontAwesome icons
       if (isLoginMode) {
         submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login';
       } else {
@@ -185,14 +184,18 @@ document.addEventListener("DOMContentLoaded", () => {
   showPage(location.hash.slice(1) || "dashboard"); 
 
   // --- 5. DASHBOARD & MONITORING ---
+  let currentDashboardData = []; 
+
   async function loadDashboard() {
     try {
       const data = await API.analytics();
+      currentDashboardData = data.daily || []; 
+      
       document.getElementById("total-value").textContent = data.total || 0;
       document.getElementById("risk-value").textContent = data.positive > data.negative ? "Elevated" : "Low Risk";
       document.getElementById("score-value").textContent = (data.total ? Math.round((data.negative / data.total) * 100) : 100) + "/100";
       
-      if (typeof renderHealthChart === "function") renderHealthChart(data.daily);
+      if (typeof renderHealthChart === "function") renderHealthChart(currentDashboardData, 'all');
       if (typeof renderRiskDistribution === "function") renderRiskDistribution();
     } catch (e) { console.error(e); }
   }
@@ -285,14 +288,12 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         let extractedText = "";
 
-        // 1. Handle JSON directly
         if (file.type === "application/json") {
           const text = await file.text();
           const data = JSON.parse(text);
           return performPrediction(data);
         }
 
-        // 2. Handle PDFs using pdf.js
         if (file.type === "application/pdf") {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
@@ -305,11 +306,9 @@ document.addEventListener("DOMContentLoaded", () => {
           extractedText = fullText;
         }
 
-        // 3. Handle Images using Tesseract.js (No Lens)
         if (file.type.startsWith("image/")) {
           resultBox.textContent = "Loading Tesseract.js...";
           
-          // Dynamically load Tesseract.js
           if (typeof Tesseract === 'undefined') {
             await new Promise((resolve, reject) => {
               const script = document.createElement('script');
@@ -322,7 +321,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
           resultBox.textContent = "Running OCR (this may take a few seconds)...";
 
-          // Run Tesseract with progress logging
           const { data: { text } } = await Tesseract.recognize(
             file,
             'eng', 
@@ -339,7 +337,6 @@ document.addEventListener("DOMContentLoaded", () => {
           extractedText = text;
         }
 
-        // 4. Validate and proceed
         if (!extractedText || extractedText.trim() === "") {
           throw new Error("No text could be extracted from the file.");
         }
@@ -429,12 +426,18 @@ document.addEventListener("DOMContentLoaded", () => {
       thinking.innerHTML = cleanMarkdown(r.answer);
     } catch (err) {
       clearInterval(thinkInterval);
-      let errMsg = err.message;
-      try {
-        const parsed = JSON.parse(errMsg);
-        if (parsed.detail) errMsg = parsed.detail;
-      } catch (e) {}
-      thinking.innerHTML = `<span style="color:#f87171;">${errMsg}</span>`;
+      let errMsg = err.message || "Unknown error";
+      
+      // GRACEFUL 502 ERROR HANDLING
+      if (errMsg.includes("502") || errMsg.includes("Bad Gateway") || errMsg.includes("<!DOCTYPE")) {
+        thinking.innerHTML = `<span style="color:#fbbf24;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</span>`;
+      } else {
+        try {
+          const parsed = JSON.parse(errMsg);
+          if (parsed.detail) errMsg = parsed.detail;
+        } catch (e) {}
+        thinking.innerHTML = `<span style="color:#f87171;">${errMsg}</span>`;
+      }
     } finally {
       if (btnElement) btnElement.disabled = false;
       if (micBtnElement) micBtnElement.disabled = false;
@@ -577,4 +580,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // --- 11. CHART TIME FILTER LISTENER ---
+  const timeFilter = document.getElementById("chart-time-filter");
+  if (timeFilter) {
+    timeFilter.addEventListener("change", (e) => {
+      const selectedFilter = e.target.value;
+      if (currentDashboardData && typeof renderHealthChart === "function") {
+        renderHealthChart(currentDashboardData, selectedFilter);
+      }
+    });
+  }
+
 });
