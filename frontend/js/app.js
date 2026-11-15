@@ -268,6 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
       box.innerHTML = "<h3 style='color: " + color + "; margin-bottom: 10px;'>" + risk + "</h3>" +
                       "<p>P(low) = " + r.probabilities[0].toFixed(3) + " | P(high) = " + r.probabilities[1].toFixed(3) + "</p>";
       
+      // SAVE PAYLOAD FOR THE AI AGENT
+      localStorage.setItem("lastPredictionPayload", JSON.stringify(payload));
+
       loadDashboard();
     } catch (err) {
       let errMsg = err.message || "Unknown error";
@@ -409,8 +412,23 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       const input = document.getElementById("chat-input-2");
       const form = document.getElementById("chat-form-2");
+      
+      // Get the last prediction data if it exists
+      const lastPayloadStr = localStorage.getItem("lastPredictionPayload");
+      let prompt = "Based on my latest health data and predictions, what are your top health recommendations for me?";
+      
+      if (lastPayloadStr) {
+        try {
+          const p = JSON.parse(lastPayloadStr);
+          // Inject the real data into the prompt
+          prompt = `My recent health metrics are: Age ${p.Age}, Sex ${p.Sex}, Resting BP ${p.RestingBP}, Cholesterol ${p.Cholesterol}, Max HR ${p.MaxHR}, Exercise Angina ${p.ExerciseAngina}. Based on this data, what are your top health recommendations for me?`;
+        } catch(e) {
+          console.error("Could not parse last payload", e);
+        }
+      }
+
       if (input && form) {
-        input.value = "Based on my latest health data and predictions, what are your top health recommendations for me?";
+        input.value = prompt;
         form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
       }
     }, 300);
