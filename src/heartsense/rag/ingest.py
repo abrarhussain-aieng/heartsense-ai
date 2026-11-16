@@ -1,38 +1,53 @@
-"""Ingest curated cardiovascular sources into ChromaDB."""
-import json
+"""Ingest curated cardiovascular PDFs into ChromaDB."""
 from pathlib import Path
-from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings  # Use local embeddings
 from langchain_chroma import Chroma
 
-SOURCES_FILE = Path(__file__).parent / "sources.json"
+# Point to the folder where you moved your 3 PDFs
+PDF_DIR = Path("data/rag_pdfs")
 PERSIST_DIR = Path("chroma")
 COLLECTION = "cardiovascular_knowledge"
 
 def ingest():
-    raw = json.loads(SOURCES_FILE.read_text(encoding="utf-8"))
-    docs = [
-        Document(
-            page_content=item["content"],
-            metadata={"id": item["id"], "title": item["title"], "url": item["url"], "source": "curated"},
-        )
-        for item in raw
-    ]
+    docs = []
+    
+    # Check if the folder exists and has PDFs
+    if not PDF_DIR.exists():
+        return {"error": f"Directory {PDF_DIR} not found."}
 
+    # Load all PDFs in the folder
+    for pdf_file in PDF_DIR.glob("*.pdf"):
+        print(f"Loading: {pdf_file.name}...")
+        loader = PyPDFLoader(str(pdf_file))
+        docs.extend(loader.load())
+
+    if not docs:
+        return {"error": "No PDF documents found to ingest."}
+
+    print(f"Loaded {len(docs)} pages. Splitting into chunks...")
+    
+    # Split the text (keeping your exact settings)
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
     chunks = splitter.split_documents(docs)
 
-    # Use a local model - no API keys needed, no 404 errors, instant speed
+    print(f"Creating {len(chunks)} chunks. Generating embeddings (this may take a moment)...")
+    
+    # Use your local model - no API keys needed
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     
+    # Save to ChromaDB
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
         collection_name=COLLECTION,
         persist_directory=str(PERSIST_DIR),
     )
-    return {"documents": len(docs), "chunks": len(chunks)}
+    
+    return {"documents_loaded": len(docs), "chunks_created": len(chunks)}
 
 if __name__ == "__main__":
-    print(ingest())
+    result = ingest()
+    print("✅ Ingestion Complete!")
+    print(result)

@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from heartsense.llm_client import get_llm
 import os
+import traceback
 from heartsense.config import settings
 
 # Explicitly set environment variables for LangSmith
@@ -78,7 +79,21 @@ async def tool_runner(state: AgentState) -> AgentState:
             return {**state, "tool_output": str(result)}
             
     except Exception as e:
-        return {**state, "answer": f"Could not connect to the MCP server. Error: {e}"}
+        # --- ADDED: Print the REAL error to the terminal ---
+        traceback.print_exc() 
+        
+        # --- ADDED: Fallback to general knowledge so the UI doesn't break ---
+        print(f"⚠️ MCP Server connection failed. Falling back to LLM general knowledge.")
+        llm = get_llm(temperature=0.2)
+        prompt = f"""User question: {state['question']}
+        
+The specific medical database tool failed to connect. 
+Using your general medical knowledge, provide a short, safe, and educational answer. 
+Do not diagnose or prescribe medication."""
+        
+        res = llm.invoke([HumanMessage(content=prompt)]).content
+        if isinstance(res, list): res = res[0].get("text", "")
+        return {**state, "answer": str(res)}
 
 def summarize(state: AgentState) -> AgentState:
     if state.get("answer"):
