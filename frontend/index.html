@@ -8,69 +8,39 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css" />
   <script src="/js/chart.umd.min.js"></script>
-
-  <!-- pdf.js for PDF extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body>
-  <!-- MOBILE MENU BUTTON & OVERLAY -->
-  <button class="mobile-menu-btn" id="mobile-menu-btn">
-    <i class="fa-solid fa-bars"></i>
-  </button>
+  <button class="mobile-menu-btn" id="mobile-menu-btn"><i class="fa-solid fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-  <!-- CLEAN CENTERED LOGIN OVERLAY -->
   <div id="auth-overlay">
     <div class="auth-box">
-      <!-- Logo and Title -->
       <div class="login-header">
-        <div class="logo-circle">
-          <i class="fa-solid fa-heart-pulse"></i>
-        </div>
+        <div class="logo-circle"><i class="fa-solid fa-heart-pulse"></i></div>
         <h2 id="auth-title">Welcome Back</h2>
         <p class="login-subtitle">Login to continue with HeartSense AI</p>
       </div>
-
       <p id="auth-error" class="auth-error"></p>
-
-      <!-- Form -->
       <form id="auth-form">
         <div id="name-group" style="display: none;">
-          <div class="input-group">
-            <i class="fa-regular fa-user"></i>
-            <input type="text" id="auth-name" placeholder="Full Name" />
-          </div>
+          <div class="input-group"><i class="fa-regular fa-user"></i><input type="text" id="auth-name"
+              placeholder="Full Name" /></div>
         </div>
-
-        <div class="input-group">
-          <i class="fa-regular fa-envelope"></i>
-          <input type="email" id="auth-email" placeholder="Email Address" required />
-        </div>
-
-        <div class="input-group">
-          <i class="fa-solid fa-lock"></i>
-          <input type="password" id="auth-password" placeholder="Password" required />
-        </div>
-
-        <button type="submit" id="auth-submit-btn" class="btn-login">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
-        </button>
+        <div class="input-group"><i class="fa-regular fa-envelope"></i><input type="email" id="auth-email"
+            placeholder="Email Address" required /></div>
+        <div class="input-group"><i class="fa-solid fa-lock"></i><input type="password" id="auth-password"
+            placeholder="Password" required /></div>
+        <button type="submit" id="auth-submit-btn" class="btn-login"><i class="fa-solid fa-arrow-right-to-bracket"></i>
+          Login</button>
       </form>
-
-      <div class="divider">
-        <span>or</span>
-      </div>
-
-      <!-- Toggle Link -->
-      <p class="auth-toggle">
-        <span id="auth-toggle-text">Don't have an account?</span>
-        <a href="#" id="auth-toggle-link">Sign up</a>
-      </p>
+      <div class="divider"><span>or</span></div>
+      <p class="auth-toggle"><span id="auth-toggle-text">Don't have an account?</span><a href="#"
+          id="auth-toggle-link">Sign up</a></p>
     </div>
   </div>
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="logo-icon"><i class="fa-solid fa-heart-pulse"></i></div>
@@ -87,17 +57,11 @@
       <a href="#reports" data-page="reports"><i class="fa-solid fa-file-medical"></i> Reports</a>
       <a href="#monitoring" data-page="monitoring"><i class="fa-solid fa-gear"></i> Model Monitoring</a>
     </nav>
-
     <div class="sidebar-bottom">
-      <button id="theme-toggle" class="sidebar-btn">
-        <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
-      </button>
-
-      <div class="promo-card">
-        <i class="fa-solid fa-rocket"></i>
+      <button id="theme-toggle" class="sidebar-btn"><i class="fa-solid fa-moon"></i> <span>Dark Mode</span></button>
+      <div class="promo-card"><i class="fa-solid fa-rocket"></i>
         <h4>Smarter Health.<br>A Healthier You.</h4>
       </div>
-
       <div class="user-profile" onclick="localStorage.clear(); window.location.reload();" style="cursor: pointer;"
         title="Click to Logout">
         <div class="avatar" id="sidebar-avatar">A</div>
@@ -109,25 +73,20 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
   <main class="main">
     <div class="content-scroll">
-      <!-- DASHBOARD PAGE -->
       <section id="page-dashboard" class="page active">
         <div class="header-section">
           <div>
             <h1 class="greeting">Welcome back, <span class="highlight" id="greeting-name">User</span> 👋</h1>
             <p class="subtitle">Here's your health overview and AI insights.</p>
           </div>
-          <div class="header-graphic">
-            <svg viewBox="0 0 200 50" class="pulse-line">
+          <div class="header-graphic"><svg viewBox="0 0 200 50" class="pulse-line">
               <path d="M0,25 L40,25 L45,10 L55,40 L65,15 L75,25 L200,25" fill="none" stroke="#3b82f6"
                 stroke-width="2" />
-            </svg>
-          </div>
+            </svg></div>
         </div>
 
-        <!-- KPI CARDS -->
         <div class="cards-grid">
           <div class="kpi-card c-blue">
             <div class="kpi-icon"><i class="fa-solid fa-heart"></i></div>
@@ -163,7 +122,6 @@
           </div>
         </div>
 
-        <!-- MIDDLE ROW -->
         <div class="middle-grid">
           <div class="glass-panel chart-panel">
             <div class="panel-header">
@@ -177,9 +135,7 @@
                 <option value="year">Last Year</option>
               </select>
             </div>
-            <div class="chart-container">
-              <canvas id="healthChart"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="healthChart"></canvas></div>
           </div>
 
           <div class="glass-panel ai-panel">
@@ -198,17 +154,13 @@
           </div>
         </div>
 
-        <!-- BOTTOM ROW -->
         <div class="bottom-grid">
           <div class="glass-panel dist-panel">
             <h2>Risk Distribution</h2>
             <div class="dist-content">
-              <div class="chart-container" style="height: 150px; width: 150px;">
-                <canvas id="riskChart"></canvas>
-              </div>
+              <div class="chart-container" style="height: 150px; width: 150px;"><canvas id="riskChart"></canvas></div>
               <div class="dist-legend">
                 <p><span class="dot green"></span> Low Risk</p>
-                <p><span class="dot yellow"></span> Medium Risk</p>
                 <p><span class="dot red"></span> High Risk</p>
               </div>
             </div>
@@ -241,7 +193,6 @@
         </div>
       </section>
 
-      <!-- OTHER PAGES -->
       <section id="page-predict" class="page">
         <h1>Predict Heart Disease Risk</h1>
         <form id="predict-form" class="glass-panel form-grid">
@@ -299,21 +250,15 @@
       <section id="page-analytics" class="page">
         <h1>📈 Analytics</h1>
         <div class="glass-panel">
-          <div class="chart-container" style="height: 400px;">
-            <canvas id="analyticsChart"></canvas>
-          </div>
+          <div class="chart-container" style="height: 400px;"><canvas id="analyticsChart"></canvas></div>
         </div>
       </section>
-
       <section id="page-reports" class="page">
         <h1>📄 Reports</h1>
-        <form id="report-form" class="glass-panel">
-          <label>Patient ID <input name="patient_id" required></label>
-          <button type="submit" class="btn-primary">Download Report File</button>
-        </form>
+        <form id="report-form" class="glass-panel"><label>Patient ID <input name="patient_id" required></label><button
+            type="submit" class="btn-primary">Download Report File</button></form>
         <pre id="report-output"></pre>
       </section>
-
       <section id="page-monitoring" class="page">
         <h1>📊 Model Monitoring</h1>
         <div id="monitoring-output" class="glass-panel">Loading...</div>
