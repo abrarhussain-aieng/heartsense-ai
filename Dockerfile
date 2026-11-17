@@ -11,6 +11,10 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
+# 1. Install CPU-only PyTorch first to avoid ~2.5GB+ of CUDA/NVIDIA packages
+RUN uv pip install --system --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# 2. Install remaining dependencies (sentence-transformers will reuse CPU torch)
 COPY requirements.txt .
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
@@ -26,7 +30,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy the application code
 COPY . .
 
-# THE FIX: Tell Python to look inside the /app/src directory for modules
+# Tell Python to look inside the /app/src directory for modules
 ENV PYTHONPATH=/app/src
 
 # Expose the port and run the app
