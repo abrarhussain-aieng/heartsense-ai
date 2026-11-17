@@ -28,6 +28,7 @@ langchain-chroma>=0.1
 langgraph>=0.2
 langchain-mcp-adapters>=0.1
 mcp>=1.27
+sentence-transformers>=2.7.0
 
 # Guardrails / Evals
 nemoguardrails>=0.10
