@@ -7,13 +7,10 @@ import os
 import traceback
 from heartsense.config import settings
 
-# Explicitly set environment variables for LangSmith
 if settings.langsmith_tracing and settings.langsmith_api_key:
     os.environ["LANGSMITH_TRACING"] = "true"
     os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
     os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
-    # If you are in the EU/APAC region, also set:
-    # os.environ["LANGSMITH_ENDPOINT"] = "https://eu.api.smith.langchain.com"
 
 class AgentState(TypedDict):
     question: str
@@ -22,10 +19,9 @@ class AgentState(TypedDict):
     tool_output: dict
     answer: str
 
-# UPDATED: Explicitly telling the router to send model accuracy/MLflow to analytics
 SUPERVISOR_PROMPT = """You are a router. Given a user question, reply ONLY with one word:
 - predict    → user asks about their own heart disease risk or a prediction
-- rag        → user asks about medical knowledge, prevention, cholesterol, BP
+- rag        → user asks about medical knowledge, prevention, cholesterol, BP, food, diet
 - analytics  → user asks for stats, counts of past predictions, model accuracy, MLflow metrics, or system performance
 - chat       → anything else (greetings, general questions)"""
 
@@ -37,7 +33,6 @@ def supervisor(state: AgentState) -> AgentState:
     ]
     response = llm.invoke(msg).content
     
-    # Handle if the LLM returns a list of blocks (newer LangChain behavior)
     if isinstance(response, list):
         response = response[0].get("text", "")
         
@@ -46,12 +41,10 @@ def supervisor(state: AgentState) -> AgentState:
         route = "chat"
     return {**state, "route": route}
 
-# Tool Runner Function
 async def tool_runner(state: AgentState) -> AgentState:
     if state["route"] == "chat":
         llm = get_llm(temperature=0.0)
-        # UPDATED: If it routes to chat but asks about MLflow, politely decline and point to the UI
-        system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT or an OpenAI model. Keep answers brief and focused on heart health. If asked about model accuracy or MLflow, state that you don't have direct access to that in this chat, but advise the user to check the 'Model Monitoring' tab in the dashboard."
+        system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT. Keep answers brief and focused on heart health. If asked about model accuracy, advise the user to check the 'Model Monitoring' tab in the dashboard."
         res = llm.invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content=state["question"])
@@ -73,16 +66,14 @@ async def tool_runner(state: AgentState) -> AgentState:
             if tool is None:
                 return {**state, "answer": f"The tool '{tool_name}' is not available right now."}
 
+            # Invoke the MCP tool
             result = await tool.ainvoke(state.get("tool_input") or {"query": state["question"]})
             
             # Store as string so the LLM can read it easily
             return {**state, "tool_output": str(result)}
             
     except Exception as e:
-        # --- ADDED: Print the REAL error to the terminal ---
         traceback.print_exc() 
-        
-        # --- ADDED: Fallback to general knowledge so the UI doesn't break ---
         print(f"⚠️ MCP Server connection failed. Falling back to LLM general knowledge.")
         llm = get_llm(temperature=0.2)
         prompt = f"""User question: {state['question']}
@@ -98,10 +89,18 @@ Do not diagnose or prescribe medication."""
 def summarize(state: AgentState) -> AgentState:
     if state.get("answer"):
         return state
-    # UPDATED: Temperature 0.0 to prevent hallucination during summarization
+        
     llm = get_llm(temperature=0.0) 
-    prompt = f"""User question: {state['question']}
-Tool output: {state['tool_output']}
+    
+    # If the tool output is literally empty or just "[]", tell the LLM to be honest
+    tool_output = str(state.get('tool_output', ''))
+    if tool_output in ["[]", "None", ""]:
+        prompt = f"""User question: {state['question']}
+You searched the medical database but found no results. 
+Politely inform the user that you do not have specific information on this topic in your database."""
+    else:
+        prompt = f"""User question: {state['question']}
+Tool output: {tool_output}
 Give a short, accurate answer based ONLY on the tool output above. 
 Do not invent information. Do not diagnose or prescribe."""
     
