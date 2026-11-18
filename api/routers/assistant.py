@@ -14,7 +14,8 @@ async def assistant(req: AssistantRequest):
 
     try:
         graph = get_graph()
-        result = await graph.ainvoke({"question": req.question})
+        # --- MODIFIED: Passed context to the graph ---
+        result = await graph.ainvoke({"question": req.question, "context": req.context})
         return AssistantResponse(
             answer=result.get("answer", ""),
             route=result.get("route"),

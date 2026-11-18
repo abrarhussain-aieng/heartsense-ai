@@ -68,6 +68,11 @@ const API = {
   async predict(payload) { return this.request("/api/predict", { method: "POST", body: JSON.stringify(payload) }); },
   async analytics() { return this.request("/api/analytics"); },
   async history() { return this.request("/api/history"); },
-  async assistant(question) { return this.request("/api/assistant", { method: "POST", body: JSON.stringify({ question }) }); },
+  
+  // --- MODIFIED: Added context parameter ---
+  async assistant(question, context = null) { 
+    return this.request("/api/assistant", { method: "POST", body: JSON.stringify({ question, context }) }); 
+  },
+  
   async monitoring() { return this.request("/api/monitoring"); },
 };

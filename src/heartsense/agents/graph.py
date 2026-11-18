@@ -14,6 +14,7 @@ if settings.langsmith_tracing and settings.langsmith_api_key:
 
 class AgentState(TypedDict):
     question: str
+    context: str | None  # <--- ADDED
     route: Literal["predict", "rag", "analytics", "chat"]
     tool_input: dict
     tool_output: dict
@@ -22,14 +23,15 @@ class AgentState(TypedDict):
 SUPERVISOR_PROMPT = """You are a router. Given a user question, reply ONLY with one word:
 - predict    → user asks about their own heart disease risk or a prediction
 - rag        → user asks about medical knowledge, prevention, cholesterol, BP, food, diet
-- analytics  → user asks for stats, counts of past predictions, model accuracy, MLflow metrics, or system performance
+- analytics  → user asks for stats, counts of past predictions, model accuracy, MLflow metrics, system performance, OR asks about dashboard metrics
 - chat       → anything else (greetings, general questions)"""
 
 def supervisor(state: AgentState) -> AgentState:
     llm = get_llm(temperature=0.0)
+    context_str = f"\n\n[User's Current Screen Context: {state.get('context')}]" if state.get("context") else ""
     msg = [
         SystemMessage(content=SUPERVISOR_PROMPT),
-        HumanMessage(content=state["question"]),
+        HumanMessage(content=state["question"] + context_str),
     ]
     response = llm.invoke(msg).content
     
@@ -45,9 +47,10 @@ async def tool_runner(state: AgentState) -> AgentState:
     if state["route"] == "chat":
         llm = get_llm(temperature=0.0)
         system_prompt = "You are HeartSense AI, a specialized cardiovascular health assistant. Never claim to be ChatGPT. Keep answers brief and focused on heart health. If asked about model accuracy, advise the user to check the 'Model Monitoring' tab in the dashboard."
+        context_str = f"\n\n[User's Current Screen Context: {state.get('context')}]" if state.get("context") else ""
         res = llm.invoke([
             SystemMessage(content=system_prompt),
-            HumanMessage(content=state["question"])
+            HumanMessage(content=state["question"] + context_str)
         ]).content
         if isinstance(res, list): res = res[0].get("text", "")
         return {**state, "answer": str(res)}
@@ -76,7 +79,8 @@ async def tool_runner(state: AgentState) -> AgentState:
         traceback.print_exc() 
         print(f"⚠️ MCP Server connection failed. Falling back to LLM general knowledge.")
         llm = get_llm(temperature=0.2)
-        prompt = f"""User question: {state['question']}
+        context_str = f"\n\n[User's Current Screen Context: {state.get('context')}]" if state.get("context") else ""
+        prompt = f"""User question: {state['question']}{context_str}
         
 The specific medical database tool failed to connect. 
 Using your general medical knowledge, provide a short, safe, and educational answer. 
@@ -91,15 +95,16 @@ def summarize(state: AgentState) -> AgentState:
         return state
         
     llm = get_llm(temperature=0.0) 
+    context_str = f"\n\n[User's Current Screen Context: {state.get('context')}]" if state.get("context") else ""
     
     # If the tool output is literally empty or just "[]", tell the LLM to be honest
     tool_output = str(state.get('tool_output', ''))
     if tool_output in ["[]", "None", ""]:
-        prompt = f"""User question: {state['question']}
+        prompt = f"""User question: {state['question']}{context_str}
 You searched the medical database but found no results. 
 Politely inform the user that you do not have specific information on this topic in your database."""
     else:
-        prompt = f"""User question: {state['question']}
+        prompt = f"""User question: {state['question']}{context_str}
 Tool output (retrieved document excerpts):
 {tool_output}
 

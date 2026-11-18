@@ -278,8 +278,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnElement) btnElement.disabled = true; if (micBtnElement) micBtnElement.disabled = true;
     const phrases = ["⏳ Analyzing...", "🧠 Routing...", "📚 Searching...", "✍️ Writing..."]; let phraseIdx = 0;
     const thinkInterval = setInterval(() => { if (phraseIdx < phrases.length) { thinking.innerHTML = `<span style="color: var(--muted); font-style: italic;">${phrases[phraseIdx]}</span>`; phraseIdx++; } }, 1500);
-    try {
-      const r = await API.assistant(q); clearInterval(thinkInterval); thinking.innerHTML = cleanMarkdown(r.answer);
+    
+    try { 
+      // --- NEW: SCRAPE DASHBOARD CONTEXT ---
+      let uiContext = null;
+      if (document.getElementById("total-value")) {
+        const totalVal = document.getElementById("total-value").textContent;
+        const riskVal = document.getElementById("risk-value").textContent;
+        const scoreVal = document.getElementById("score-value").textContent;
+        const accVal = document.getElementById("acc-value").textContent;
+        uiContext = `User's Dashboard Cards: Total Analyses: ${totalVal}, Heart Risk: ${riskVal}, Health Score: ${scoreVal}, Model Accuracy: ${accVal}.`;
+      }
+      // -------------------------------------
+
+      const r = await API.assistant(q, uiContext); clearInterval(thinkInterval); thinking.innerHTML = cleanMarkdown(r.answer);
     } catch (err) {
       clearInterval(thinkInterval); let errMsg = err.message || "Unknown error";
       if (errMsg.includes("502") || errMsg.includes("Bad Gateway") || errMsg.includes("<!DOCTYPE")) { thinking.innerHTML = `<span style="color:#fbbf24;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</span>`; } else { try { const parsed = JSON.parse(errMsg); if (parsed.detail) errMsg = parsed.detail; } catch (e) {} thinking.innerHTML = `<span style="color:#f87171;">${errMsg}</span>`; }
