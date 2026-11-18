@@ -75,7 +75,11 @@ jobs:
             # 5. Pull the latest image
             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 6. Start the API container
+            # 6. Wipe old Chroma DB on server so we start fresh
+            rm -rf /home/ubuntu/chroma
+            mkdir -p /home/ubuntu/chroma
+
+            # 7. Start the API container (WITH chroma volume mount)
             docker run -d \
               --name heartsense-api \
               --network heartsense-net \
@@ -83,10 +87,11 @@ jobs:
               -p 8000:8000 \
               --env-file /home/ubuntu/.env \
               -v /home/ubuntu/artifacts:/app/artifacts \
+              -v /home/ubuntu/chroma:/app/chroma \
               -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 7. Start the MCP container
+            # 8. Start the MCP container (WITH chroma volume mount)
             docker run -d \
               --name mcp \
               --network heartsense-net \
@@ -94,4 +99,9 @@ jobs:
               -p 8001:8001 \
               --env-file /home/ubuntu/.env \
               -v /home/ubuntu/artifacts:/app/artifacts \
+              -v /home/ubuntu/chroma:/app/chroma \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server
+
+            # 9. BUILD THE DATABASE ON THE SERVER
+            # This runs inside the API container and writes directly to the mounted /app/chroma volume
+            docker exec heartsense-api python src/heartsense/rag/ingest.py

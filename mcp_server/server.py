@@ -48,7 +48,7 @@ def predict_heart_disease(input: PredictInput) -> dict:
         return {"error": f"Prediction failed: {str(e)}"}
 
 @mcp.tool()
-def search_medical_knowledge(query: str, k: int = 4) -> list[dict]:
+def search_medical_knowledge(query: str, k: int = 8) -> list[dict]:
     """Retrieve grounded cardiovascular knowledge excerpts with source metadata."""
     try:
         return rag_retrieve(query, k=k)

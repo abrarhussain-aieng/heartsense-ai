@@ -99,12 +99,18 @@ def summarize(state: AgentState) -> AgentState:
 You searched the medical database but found no results. 
 Politely inform the user that you do not have specific information on this topic in your database."""
     else:
-        # UPDATED: Made the prompt much stricter to prevent generic summarization
+        # FIXED: Relaxed the prompt to allow the LLM to infer answers instead of demanding an exact match
         prompt = f"""User question: {state['question']}
-Tool output: {tool_output}
-Give a short, accurate answer based ONLY on the tool output above. 
-If the exact answer is not in the tool output, say "I don't know based on the provided documents."
-Do not invent information. Do not summarize generally. Do not diagnose or prescribe."""
+Tool output (retrieved document excerpts):
+{tool_output}
+
+Answer the question using the tool output above. Rules:
+- If the excerpt states the answer, answer it directly.
+- If the answer is directly implied by the excerpt (e.g., a food is listed as "recommended" when asked what to avoid), state the implication.
+- Do not invent facts, numbers, or sources.
+- Do not diagnose or prescribe medication.
+- If the excerpts are genuinely unrelated to the question, reply: "I don't have enough information in the provided documents to answer that."
+"""
     
     response = llm.invoke([HumanMessage(content=prompt)]).content
     if isinstance(response, list): response = response[0].get("text", "")
