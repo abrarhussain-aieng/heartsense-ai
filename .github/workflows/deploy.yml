@@ -71,9 +71,10 @@ jobs:
             # 5. Pull the latest image
             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 6. Wipe old Chroma DB on server so we start fresh
-            rm -rf /home/ubuntu/chroma
+            # 6. Wipe old Chroma DB with SUDO to override UID conflicts
+            sudo rm -rf /home/ubuntu/chroma
             mkdir -p /home/ubuntu/chroma
+            sudo chown -R ubuntu:ubuntu /home/ubuntu/chroma
 
             # 7. Start the API container (WITH chroma volume mount)
             docker run -d \
