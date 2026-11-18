@@ -85,7 +85,7 @@ jobs:
             rm -rf /home/ubuntu/chroma
             mkdir -p /home/ubuntu/chroma
 
-            # 7. Start the API container (WITH chroma volume mount)
+            # 7. Start the API container
             docker run -d \
               --name heartsense-api \
               --network heartsense-net \
@@ -97,10 +97,14 @@ jobs:
               -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 8. BUILD THE DATABASE ON THE SERVER (Run as root to avoid permission errors)
+            # 8. BUILD THE DATABASE ON THE SERVER (Run as root to avoid write errors)
             docker exec -u root heartsense-api python src/heartsense/rag/ingest.py
 
-            # 9. Start the MCP container (WITH chroma volume mount)
+            # 8.5 FIX PERMISSIONS FOR THE MCP CONTAINER
+            # ChromaDB needs appuser (UID 1000) to be able to lock/write to the db files
+            sudo chown -R 1000:1000 /home/ubuntu/chroma
+
+            # 9. Start the MCP container
             docker run -d \
               --name mcp \
               --network heartsense-net \
