@@ -1,49 +1,70 @@
-from functools import lru_cache
 from pathlib import Path
-from typing import List, Dict
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
-from heartsense.config import settings
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.retrievers import BM25Retriever
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 PERSIST_DIR = Path("chroma")
 COLLECTION = "cardiovascular_knowledge"
+PDF_DIR = Path("data/rag_pdfs")
 
-# FIXED: Removed the strict 1.2 threshold. 
-# We will do filtering in the LLM prompt instead.
-MAX_DISTANCE_THRESHOLD = 2.0 
+# Load embeddings
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-@lru_cache(maxsize=1)
-def _store() -> Chroma:
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    return Chroma(
-        collection_name=COLLECTION,
-        embedding_function=embeddings,
-        persist_directory=str(PERSIST_DIR),
-    )
+# Load Vector Store
+vectorstore = Chroma(
+    collection_name=COLLECTION,
+    embedding_function=embeddings,
+    persist_directory=str(PERSIST_DIR),
+)
+vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
 
-def retrieve(query: str, k: int = 8) -> List[Dict]:
+# Load documents for BM25 (Keyword search)
+docs = []
+for pdf_file in PDF_DIR.glob("*.pdf"):
+    loader = PyPDFLoader(str(pdf_file))
+    docs.extend(loader.load())
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=400, 
+    chunk_overlap=100, 
+    separators=["\n\n", "\n", ". ", " ", ""]
+)
+chunks = splitter.split_documents(docs)
+
+bm25_retriever = BM25Retriever.from_documents(chunks)
+bm25_retriever.k = 6
+
+def retrieve(query: str, k: int = 8) -> list[dict]:
+    """
+    Manual Hybrid Search: Combines BM25 and Vector retrieval, then deduplicates.
+    Avoids the incompatible EnsembleRetriever import.
+    """
     try:
-        results = _store().similarity_search_with_score(query, k=k)
+        # 1. Get results from both retrievers
+        vector_docs = vector_retriever.invoke(query)
+        bm25_docs = bm25_retriever.invoke(query)
+
+        # 2. Merge and deduplicate (based on page content)
+        seen_content = set()
+        merged_docs = []
+
+        for doc in vector_docs + bm25_docs:
+            if doc.page_content not in seen_content:
+                seen_content.add(doc.page_content)
+                merged_docs.append(doc)
+
+        # 3. Format for the MCP tool
+        formatted_results = []
+        for doc in merged_docs[:k]:
+            formatted_results.append({
+                "content": doc.page_content,
+                "title": doc.metadata.get("source", "AHA Guideline"),
+                "url": ""
+            })
+        return formatted_results
+
     except Exception as e:
-        print(f"ChromaDB search failed: {e}")
+        print(f"Retrieval failed: {e}")
         return []
-        
-    out = []
-    for doc, distance in results:
-        # Print to console for debugging
-        print(f"[RAG] Found doc. Distance: {distance}")
-        
-        if distance > MAX_DISTANCE_THRESHOLD: 
-            continue
-            
-        relevance = max(0.0, 1.0 - (distance / 2.0))
-        
-        out.append({
-            "content": doc.page_content,
-            "title": doc.metadata.get("title", ""),
-            "url": doc.metadata.get("url", ""),
-            "source_id": doc.metadata.get("id", ""),
-            "relevance": float(relevance),
-        })
-        
-    return out

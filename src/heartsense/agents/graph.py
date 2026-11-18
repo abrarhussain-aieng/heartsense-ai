@@ -99,16 +99,16 @@ def summarize(state: AgentState) -> AgentState:
 You searched the medical database but found no results. 
 Politely inform the user that you do not have specific information on this topic in your database."""
     else:
-        # FIXED: Relaxed the prompt to allow the LLM to infer answers instead of demanding an exact match
         prompt = f"""User question: {state['question']}
 Tool output (retrieved document excerpts):
 {tool_output}
 
 Answer the question using the tool output above. Rules:
 - If the excerpt states the answer, answer it directly.
-- If the answer is directly implied by the excerpt (e.g., a food is listed as "recommended" when asked what to avoid), state the implication.
+- If the answer is directly implied by the excerpt, state the implication.
 - Do not invent facts, numbers, or sources.
 - Do not diagnose or prescribe medication.
+- DO NOT include document IDs (like [1c5ce6d736...]) in your final answer. Just write a clean, natural response.
 - If the excerpts are genuinely unrelated to the question, reply: "I don't have enough information in the provided documents to answer that."
 """
     
