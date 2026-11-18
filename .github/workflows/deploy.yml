@@ -59,14 +59,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, ECR_REGISTRY, ECR_REPOSITORY
           script: |
-            # 1. FORCE KILL ALL CONTAINERS to free up ports 8000 and 8001
+            # 1. FORCE KILL ALL CONTAINERS to free up ports
             docker kill $(docker ps -q) || true
             docker rm $(docker ps -a -q) || true
 
-            # 2. Clean up unused Docker data and networks
+            # 2. Clean up unused Docker data
             docker system prune -af --volumes
 
-            # 3. Create the shared Docker network AFTER pruning
+            # 3. Create the shared Docker network
             docker network create heartsense-net || true
 
             # 4. Authenticate Docker with ECR
@@ -91,7 +91,11 @@ jobs:
               -v /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 8. Start the MCP container (WITH chroma volume mount)
+            # 8. BUILD THE DATABASE ON THE SERVER (Run as root to avoid permission errors)
+            # We do this BEFORE starting the MCP container to save memory
+            docker exec -u root heartsense-api python src/heartsense/rag/ingest.py
+
+            # 9. Start the MCP container (WITH chroma volume mount)
             docker run -d \
               --name mcp \
               --network heartsense-net \
@@ -101,7 +105,3 @@ jobs:
               -v /home/ubuntu/artifacts:/app/artifacts \
               -v /home/ubuntu/chroma:/app/chroma \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest python -m mcp_server.server
-
-            # 9. BUILD THE DATABASE ON THE SERVER
-            # This runs inside the API container and writes directly to the mounted /app/chroma volume
-            docker exec heartsense-api python src/heartsense/rag/ingest.py
