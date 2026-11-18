@@ -19,6 +19,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const authForm = document.getElementById("auth-form"); const authTitle = document.getElementById("auth-title"); const authError = document.getElementById("auth-error"); const nameGroup = document.getElementById("name-group"); const submitBtn = document.getElementById("auth-submit-btn"); const toggleLink = document.getElementById("auth-toggle-link"); const toggleText = document.getElementById("auth-toggle-text");
   let isLoginMode = true;
 
+  // --- ADDED: Password Reveal Eye Icon Logic ---
+  const togglePassword = document.getElementById("toggle-password");
+  const passwordInput = document.getElementById("auth-password");
+  if (togglePassword && passwordInput) {
+    togglePassword.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePassword.classList.toggle("fa-eye");
+      togglePassword.classList.toggle("fa-eye-slash");
+    });
+  }
+  // ----------------------------------------------
+
   if (toggleLink) {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault(); isLoginMode = !isLoginMode;

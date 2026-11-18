@@ -30,8 +30,16 @@
         </div>
         <div class="input-group"><i class="fa-regular fa-envelope"></i><input type="email" id="auth-email"
             placeholder="Email Address" required /></div>
-        <div class="input-group"><i class="fa-solid fa-lock"></i><input type="password" id="auth-password"
-            placeholder="Password" required /></div>
+
+        <!-- MODIFIED: Added Eye Icon and relative positioning -->
+        <div class="input-group" style="position: relative;">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="auth-password" placeholder="Password" required style="padding-right: 40px;" />
+          <i class="fa-solid fa-eye" id="toggle-password"
+            style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--muted); z-index: 10;"></i>
+        </div>
+        <!-- END MODIFIED -->
+
         <button type="submit" id="auth-submit-btn" class="btn-login"><i class="fa-solid fa-arrow-right-to-bracket"></i>
           Login</button>
       </form>
