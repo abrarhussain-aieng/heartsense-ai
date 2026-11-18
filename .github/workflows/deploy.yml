@@ -71,10 +71,14 @@ jobs:
             # 5. Pull the latest image
             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-            # 6. Wipe old Chroma DB with SUDO to override UID conflicts
+            # 6. FIX PERMISSIONS: Ensure host directories match container UID (1000)
             sudo rm -rf /home/ubuntu/chroma
             mkdir -p /home/ubuntu/chroma
-            sudo chown -R ubuntu:ubuntu /home/ubuntu/chroma
+            mkdir -p /home/ubuntu/artifacts
+            
+            # Change ownership to UID 1000, which is the standard for 'appuser' in Docker
+            sudo chown -R 1000:1000 /home/ubuntu/chroma
+            sudo chown -R 1000:1000 /home/ubuntu/artifacts
 
             # 7. Start the API container (WITH chroma volume mount)
             docker run -d \
