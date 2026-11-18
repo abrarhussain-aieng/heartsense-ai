@@ -1,7 +1,10 @@
 # --- STAGE 1: Builder ---
-FROM python:3.12-slim AS builder
+# CHANGED: Added -bookworm to use stable Debian repos
+FROM python:3.12-slim-bookworm AS builder
 
+# CHANGED: Added --option Acquire::Retries=5 to handle network blips
 RUN apt-get update && apt-get install -y --no-install-recommends \
+          -o Acquire::Retries=5 \
           build-essential \
           libffi-dev \
           python3-dev \
@@ -19,7 +22,8 @@ COPY requirements.txt .
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 # --- STAGE 2: Final Image ---
-FROM python:3.12-slim
+# CHANGED: Added -bookworm
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
