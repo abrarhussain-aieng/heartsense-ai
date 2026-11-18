@@ -24,7 +24,8 @@ SUPERVISOR_PROMPT = """You are a router. Given a user question, reply ONLY with 
 - predict    → user asks about their own heart disease risk or a prediction
 - rag        → user asks about medical knowledge, prevention, cholesterol, BP, food, diet
 - analytics  → user asks for stats, counts of past predictions, model accuracy, MLflow metrics, system performance, OR asks about dashboard metrics
-- chat       → anything else (greetings, general questions)"""
+- chat       → anything else (greetings, general questions)
+- If the user asks about a specific metric (like Heart Risk, Health Score, Accuracy), ALWAYS prioritize checking the [User's Current Screen Context] provided. If the metric is there, mention what it is on their screen before giving a general definition."""
 
 def supervisor(state: AgentState) -> AgentState:
     llm = get_llm(temperature=0.0)
