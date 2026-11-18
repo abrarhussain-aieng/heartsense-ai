@@ -21,7 +21,7 @@ def _store() -> Chroma:
         persist_directory=str(PERSIST_DIR),
     )
 
-def retrieve(query: str, k: int = 4) -> List[Dict]:
+def retrieve(query: str, k: int = 8) -> List[Dict]:
     try:
         results = _store().similarity_search_with_score(query, k=k)
     except Exception as e:

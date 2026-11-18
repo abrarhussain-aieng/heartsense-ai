@@ -89,17 +89,92 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentDashboardData = []; 
 
+  // NEW: Helper function to fetch accuracy for the dashboard card
+  async function fetchAccuracyForDashboard() {
+    try {
+      const m = await API.monitoring();
+      const accBox = document.getElementById("acc-value");
+      const accStatusEl = document.getElementById("acc-status");
+      
+      if (m.configured && m.runs && m.runs.length) {
+        const best = m.runs[0];
+        const acc = (best.metrics?.accuracy || best.metrics?.["accuracy"] || 0) * 100;
+        accBox.textContent = acc.toFixed(1) + "%";
+        
+        // Update Accuracy Status
+        if (acc >= 85) {
+          accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-up"></i> High & Stable';
+          accStatusEl.style.color = "#10b981"; // Green
+        } else if (acc >= 70) {
+          accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Acceptable';
+          accStatusEl.style.color = "#fbbf24"; // Yellow
+        } else {
+          accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Needs Retraining';
+          accStatusEl.style.color = "#ef4444"; // Red
+        }
+      } else {
+        accBox.textContent = "N/A";
+        accStatusEl.innerHTML = 'Not Trained';
+        accStatusEl.style.color = "var(--muted)";
+      }
+    } catch (e) { console.error("Failed to fetch accuracy", e); }
+  }
+
   async function loadDashboard() {
     try {
       const data = await API.analytics();
       currentDashboardData = data.daily || []; 
-      document.getElementById("total-value").textContent = data.total || 0;
-      document.getElementById("risk-value").textContent = data.positive > data.negative ? "Elevated" : "Low Risk";
-      document.getElementById("score-value").textContent = (data.total ? Math.round((data.negative / data.total) * 100) : 100) + "/100";
       
+      const total = data.total || 0;
+      document.getElementById("total-value").textContent = total;
+      
+      // 1. Update Heart Risk Card
+      const riskValueEl = document.getElementById("risk-value");
+      const riskStatusEl = document.getElementById("risk-status");
+      if (data.positive > data.negative) {
+        riskValueEl.textContent = "Elevated";
+        riskStatusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Take Care!';
+        riskStatusEl.style.color = "#ef4444"; // Red
+      } else {
+        riskValueEl.textContent = "Low Risk";
+        riskStatusEl.innerHTML = '<i class="fa-solid fa-check"></i> Good News!';
+        riskStatusEl.style.color = "#10b981"; // Green
+      }
+
+      // 2. Update Health Score Card dynamically
+      const score = total ? Math.round((data.negative / total) * 100) : 100;
+      document.getElementById("score-value").textContent = score + "/100";
+      
+      const scoreStatusEl = document.getElementById("score-status");
+      if (score >= 80) {
+        scoreStatusEl.innerHTML = '<i class="fa-solid fa-star"></i> Excellent!';
+        scoreStatusEl.style.color = "#fbbf24"; // Gold
+      } else if (score >= 60) {
+        scoreStatusEl.innerHTML = '<i class="fa-solid fa-thumbs-up"></i> Good';
+        scoreStatusEl.style.color = "#10b981"; // Green
+      } else if (score >= 40) {
+        scoreStatusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Fair';
+        scoreStatusEl.style.color = "#fb923c"; // Orange
+      } else {
+        scoreStatusEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Needs Improvement';
+        scoreStatusEl.style.color = "#ef4444"; // Red
+      }
+
+      // 3. Update Total Analysis Status (Bonus)
+      const totalStatusEl = document.getElementById("total-status");
+      if (total > 0) {
+        totalStatusEl.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Active';
+        totalStatusEl.style.color = "#10b981"; // Green
+      } else {
+        totalStatusEl.innerHTML = 'No Data';
+        totalStatusEl.style.color = "var(--muted)";
+      }
+
+      // 4. Fetch Accuracy
+      fetchAccuracyForDashboard();
+
       if (typeof renderHealthChart === "function") renderHealthChart(currentDashboardData, 'all');
       
-      // UPDATED: Passing the real counts to the chart
       if (typeof renderRiskDistribution === "function") {
         renderRiskDistribution(data.negative || 0, data.positive || 0);
       }

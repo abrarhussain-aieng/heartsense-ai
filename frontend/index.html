@@ -88,20 +88,21 @@
         </div>
 
         <div class="cards-grid">
+          <!-- UPDATED: Added IDs to the trend texts for dynamic updates -->
           <div class="kpi-card c-blue">
             <div class="kpi-icon"><i class="fa-solid fa-heart"></i></div>
             <div class="kpi-content">
               <h3>Heart Risk</h3>
               <p class="value" id="risk-value">Low Risk</p>
-              <p class="trend text-green"><i class="fa-solid fa-check"></i> Good News!</p>
+              <p class="trend text-green" id="risk-status"><i class="fa-solid fa-check"></i> Good News!</p>
             </div>
           </div>
           <div class="kpi-card c-purple">
             <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-content">
               <h3>Accuracy</h3>
-              <p class="value" id="acc-value">88.0%</p>
-              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> Stable</p>
+              <p class="value" id="acc-value">N/A</p>
+              <p class="trend text-green" id="acc-status"><i class="fa-solid fa-arrow-up"></i> Stable</p>
             </div>
           </div>
           <div class="kpi-card c-green">
@@ -109,7 +110,7 @@
             <div class="kpi-content">
               <h3>Total Analysis</h3>
               <p class="value" id="total-value">—</p>
-              <p class="trend text-green"><i class="fa-solid fa-arrow-up"></i> +12%</p>
+              <p class="trend text-green" id="total-status"><i class="fa-solid fa-arrow-up"></i> +12%</p>
             </div>
           </div>
           <div class="kpi-card c-orange">
@@ -117,7 +118,7 @@
             <div class="kpi-content">
               <h3>Health Score</h3>
               <p class="value" id="score-value">—</p>
-              <p class="trend" style="color: #fbbf24;"><i class="fa-solid fa-star"></i> Excellent!</p>
+              <p class="trend" id="score-status" style="color: #fbbf24;"><i class="fa-solid fa-star"></i> Excellent!</p>
             </div>
           </div>
         </div>

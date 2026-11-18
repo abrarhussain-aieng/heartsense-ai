@@ -28,8 +28,8 @@ def ingest():
 
     print(f"Loaded {len(docs)} pages. Splitting into chunks...")
     
-    # Split the text (keeping your exact settings)
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
+    # UPDATED: Increased overlap to 150 to ensure sentences aren't split in half
+    splitter = RecursiveCharacterTextSplitter(chunk_size=600, chunk_overlap=150)
     chunks = splitter.split_documents(docs)
 
     print(f"Creating {len(chunks)} chunks. Generating embeddings (this may take a moment)...")

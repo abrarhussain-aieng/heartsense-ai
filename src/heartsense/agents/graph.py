@@ -99,10 +99,12 @@ def summarize(state: AgentState) -> AgentState:
 You searched the medical database but found no results. 
 Politely inform the user that you do not have specific information on this topic in your database."""
     else:
+        # UPDATED: Made the prompt much stricter to prevent generic summarization
         prompt = f"""User question: {state['question']}
 Tool output: {tool_output}
 Give a short, accurate answer based ONLY on the tool output above. 
-Do not invent information. Do not diagnose or prescribe."""
+If the exact answer is not in the tool output, say "I don't know based on the provided documents."
+Do not invent information. Do not summarize generally. Do not diagnose or prescribe."""
     
     response = llm.invoke([HumanMessage(content=prompt)]).content
     if isinstance(response, list): response = response[0].get("text", "")
