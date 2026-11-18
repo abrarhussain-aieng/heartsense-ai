@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const authForm = document.getElementById("auth-form"); const authTitle = document.getElementById("auth-title"); const authError = document.getElementById("auth-error"); const nameGroup = document.getElementById("name-group"); const submitBtn = document.getElementById("auth-submit-btn"); const toggleLink = document.getElementById("auth-toggle-link"); const toggleText = document.getElementById("auth-toggle-text");
   let isLoginMode = true;
 
-  // --- ADDED: Password Reveal Eye Icon Logic ---
+  // --- PASSWORD REVEAL EYE ICON LOGIC ---
   const togglePassword = document.getElementById("toggle-password");
   const passwordInput = document.getElementById("auth-password");
   if (togglePassword && passwordInput) {
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
       togglePassword.classList.toggle("fa-eye-slash");
     });
   }
-  // ----------------------------------------------
+  // --------------------------------------
 
   if (toggleLink) {
     toggleLink.addEventListener("click", (e) => {
@@ -102,7 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentDashboardData = []; 
 
-  // NEW: Helper function to fetch accuracy for the dashboard card
   async function fetchAccuracyForDashboard() {
     try {
       const m = await API.monitoring();
@@ -114,16 +113,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const acc = (best.metrics?.accuracy || best.metrics?.["accuracy"] || 0) * 100;
         accBox.textContent = acc.toFixed(1) + "%";
         
-        // Update Accuracy Status
         if (acc >= 85) {
           accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-up"></i> High & Stable';
-          accStatusEl.style.color = "#10b981"; // Green
+          accStatusEl.style.color = "#10b981"; 
         } else if (acc >= 70) {
           accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Acceptable';
-          accStatusEl.style.color = "#fbbf24"; // Yellow
+          accStatusEl.style.color = "#fbbf24"; 
         } else {
           accStatusEl.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Needs Retraining';
-          accStatusEl.style.color = "#ef4444"; // Red
+          accStatusEl.style.color = "#ef4444"; 
         }
       } else {
         accBox.textContent = "N/A";
@@ -141,56 +139,49 @@ document.addEventListener("DOMContentLoaded", () => {
       const total = data.total || 0;
       document.getElementById("total-value").textContent = total;
       
-      // 1. Update Heart Risk Card
       const riskValueEl = document.getElementById("risk-value");
       const riskStatusEl = document.getElementById("risk-status");
       if (data.positive > data.negative) {
         riskValueEl.textContent = "Elevated";
         riskStatusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Take Care!';
-        riskStatusEl.style.color = "#ef4444"; // Red
+        riskStatusEl.style.color = "#ef4444"; 
       } else {
         riskValueEl.textContent = "Low Risk";
         riskStatusEl.innerHTML = '<i class="fa-solid fa-check"></i> Good News!';
-        riskStatusEl.style.color = "#10b981"; // Green
+        riskStatusEl.style.color = "#10b981"; 
       }
 
-      // 2. Update Health Score Card dynamically
       const score = total ? Math.round((data.negative / total) * 100) : 100;
       document.getElementById("score-value").textContent = score + "/100";
       
       const scoreStatusEl = document.getElementById("score-status");
       if (score >= 80) {
         scoreStatusEl.innerHTML = '<i class="fa-solid fa-star"></i> Excellent!';
-        scoreStatusEl.style.color = "#fbbf24"; // Gold
+        scoreStatusEl.style.color = "#fbbf24"; 
       } else if (score >= 60) {
         scoreStatusEl.innerHTML = '<i class="fa-solid fa-thumbs-up"></i> Good';
-        scoreStatusEl.style.color = "#10b981"; // Green
+        scoreStatusEl.style.color = "#10b981"; 
       } else if (score >= 40) {
         scoreStatusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Fair';
-        scoreStatusEl.style.color = "#fb923c"; // Orange
+        scoreStatusEl.style.color = "#fb923c"; 
       } else {
         scoreStatusEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Needs Improvement';
-        scoreStatusEl.style.color = "#ef4444"; // Red
+        scoreStatusEl.style.color = "#ef4444"; 
       }
 
-      // 3. Update Total Analysis Status (Bonus)
       const totalStatusEl = document.getElementById("total-status");
       if (total > 0) {
         totalStatusEl.innerHTML = '<i class="fa-solid fa-arrow-up"></i> Active';
-        totalStatusEl.style.color = "#10b981"; // Green
+        totalStatusEl.style.color = "#10b981"; 
       } else {
         totalStatusEl.innerHTML = 'No Data';
         totalStatusEl.style.color = "var(--muted)";
       }
 
-      // 4. Fetch Accuracy
       fetchAccuracyForDashboard();
 
       if (typeof renderHealthChart === "function") renderHealthChart(currentDashboardData, 'all');
-      
-      if (typeof renderRiskDistribution === "function") {
-        renderRiskDistribution(data.negative || 0, data.positive || 0);
-      }
+      if (typeof renderRiskDistribution === "function") { renderRiskDistribution(data.negative || 0, data.positive || 0); }
       
     } catch (e) { console.error(e); }
   }
@@ -293,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const thinkInterval = setInterval(() => { if (phraseIdx < phrases.length) { thinking.innerHTML = `<span style="color: var(--muted); font-style: italic;">${phrases[phraseIdx]}</span>`; phraseIdx++; } }, 1500);
     
     try { 
-      // --- NEW: SCRAPE DASHBOARD CONTEXT ---
       let uiContext = null;
       if (document.getElementById("total-value")) {
         const totalVal = document.getElementById("total-value").textContent;
@@ -302,7 +292,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const accVal = document.getElementById("acc-value").textContent;
         uiContext = `User's Dashboard Cards: Total Analyses: ${totalVal}, Heart Risk: ${riskVal}, Health Score: ${scoreVal}, Model Accuracy: ${accVal}.`;
       }
-      // -------------------------------------
 
       const r = await API.assistant(q, uiContext); clearInterval(thinkInterval); thinking.innerHTML = cleanMarkdown(r.answer);
     } catch (err) {

@@ -28,18 +28,19 @@
           <div class="input-group"><i class="fa-regular fa-user"></i><input type="text" id="auth-name"
               placeholder="Full Name" /></div>
         </div>
+
         <div class="input-group"><i class="fa-regular fa-envelope"></i><input type="email" id="auth-email"
             placeholder="Email Address" required /></div>
 
-        <!-- MODIFIED: Password Input with Eye Icon on the Right -->
-        <div class="input-group" style="position: relative; display: flex; align-items: center;">
-          <i class="fa-solid fa-lock" style="margin-right: 10px;"></i>
+        <!-- BULLETPROOF FIX: !important overrides styles.css to keep icon on the right -->
+        <div class="input-group" style="position: relative;">
+          <i class="fa-solid fa-lock"></i>
           <input type="password" id="auth-password" placeholder="Password" required
-            style="padding-right: 40px; width: 100%; background: transparent; border: none; outline: none; color: inherit;" />
+            style="padding-right: 40px; width: 100%; box-sizing: border-box;" />
           <i class="fa-solid fa-eye" id="toggle-password"
-            style="position: absolute; right: 15px; cursor: pointer; color: #888; z-index: 10;"></i>
+            style="position: absolute !important; left: auto !important; right: 15px !important; top: 50% !important; transform: translateY(-50%) !important; cursor: pointer !important; color: var(--muted) !important; z-index: 10 !important; margin: 0 !important;"></i>
         </div>
-        <!-- END MODIFIED -->
+        <!-- END FIX -->
 
         <button type="submit" id="auth-submit-btn" class="btn-login"><i class="fa-solid fa-arrow-right-to-bracket"></i>
           Login</button>
@@ -97,7 +98,6 @@
         </div>
 
         <div class="cards-grid">
-          <!-- UPDATED: Added IDs to the trend texts for dynamic updates -->
           <div class="kpi-card c-blue">
             <div class="kpi-icon"><i class="fa-solid fa-heart"></i></div>
             <div class="kpi-content">
