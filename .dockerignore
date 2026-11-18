@@ -7,6 +7,6 @@ __pycache__
 notebooks
 tests
 *.joblib
-*.db
+# REMOVED *.db so history.db isn't ignored
 .venv
 ai-env

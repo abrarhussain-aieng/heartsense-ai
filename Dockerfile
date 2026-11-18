@@ -27,11 +27,21 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# Set HuggingFace cache directory so the non-root user has permission to read it
+ENV HF_HOME=/app/.cache/huggingface
+
+# Pre-download the embedding model so the container doesn't fetch it at runtime
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 # Copy the application code
 COPY . .
 
 # Tell Python to look inside the /app/src directory for modules
 ENV PYTHONPATH=/app/src
+
+# Create a non-root user and give them ownership of the app directory (including the model cache)
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
 
 # Expose the port and run the app
 EXPOSE 8000
