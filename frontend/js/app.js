@@ -220,31 +220,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- FAST MEDICAL REPORT VALIDATOR ---
+  function isMedicalReport(text) {
+    const lowerText = text.toLowerCase();
+    const keywords = ["cholesterol", "blood pressure", "heart rate", "ecg", "patient", "age", "gender", "blood", "diagnosis", "bp"];
+    let matchCount = 0;
+    for (const keyword of keywords) {
+      if (lowerText.includes(keyword)) matchCount++;
+    }
+    return matchCount >= 2; // Require at least 2 medical keywords
+  }
+  // --------------------------------------
+
   const reportUpload = document.getElementById("report-upload");
   if (reportUpload) {
     reportUpload.addEventListener("change", async (e) => {
       const file = e.target.files[0]; if (!file) return;
-      const resultBox = document.getElementById("predict-result"); resultBox.textContent = "Initializing OCR engine..."; window.location.hash = "#predict";
+      
+      // FAST FILE SIZE CHECK (Max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File is too large. Please upload a file smaller than 5MB.");
+        return;
+      }
+
+      const resultBox = document.getElementById("predict-result"); 
+      window.location.hash = "#predict";
+      
       try {
         let extractedText = "";
+        
         if (file.type === "application/json") { const text = await file.text(); const data = JSON.parse(text); return performPrediction(data); }
+        
+        // --- FAST PDF PROCESSING (Only reads first 3 pages) ---
         if (file.type === "application/pdf") {
-          const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument(arrayBuffer).promise; let fullText = "";
-          for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += textContent.items.map(item => item.str).join(" ") + " "; }
+          resultBox.textContent = "Extracting text from PDF...";
+          const arrayBuffer = await file.arrayBuffer(); 
+          const pdf = await pdfjsLib.getDocument(arrayBuffer).promise; 
+          let fullText = "";
+          const maxPages = Math.min(pdf.numPages, 3); // MAX 3 PAGES FOR SPEED
+          
+          for (let i = 1; i <= maxPages; i++) { 
+            const page = await pdf.getPage(i); 
+            const textContent = await page.getTextContent(); 
+            fullText += textContent.items.map(item => item.str).join(" ") + " "; 
+          }
           extractedText = fullText;
         }
+        
+        // --- FAST IMAGE OCR ---
         if (file.type.startsWith("image/")) {
-          resultBox.textContent = "Loading Tesseract.js...";
-          if (typeof Tesseract === 'undefined') { await new Promise((resolve, reject) => { const script = document.createElement('script'); script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; script.onload = resolve; script.onerror = reject; document.head.appendChild(script); }); }
+          resultBox.textContent = "Loading OCR engine...";
+          if (typeof Tesseract === 'undefined') { 
+            await new Promise((resolve, reject) => { 
+              const script = document.createElement('script'); 
+              script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; 
+              script.onload = resolve; 
+              script.onerror = reject; 
+              document.head.appendChild(script); 
+            }); 
+          }
           resultBox.textContent = "Running OCR (this may take a few seconds)...";
           const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: m => { if (m.status === 'recognizing text') { const progress = Math.round(m.progress * 100); resultBox.textContent = `Reading image: ${progress}%`; } } });
           extractedText = text;
         }
+        
         if (!extractedText || extractedText.trim() === "") throw new Error("No text could be extracted from the file.");
-        resultBox.textContent = "Analyzing extracted medical data..."; const vitals = extractVitalsFromText(extractedText); performPrediction(vitals);
+        
+        // --- FAST RELEVANCE CHECK BEFORE PARSING VITALS ---
+        if (!isMedicalReport(extractedText)) {
+            throw new Error("This document does not appear to be a valid medical report. Please upload a heart health lab result or diagnosis.");
+        }
+
+        resultBox.textContent = "Analyzing extracted medical data..."; 
+        const vitals = extractVitalsFromText(extractedText); 
+        performPrediction(vitals);
+        
       } catch (err) {
-        console.error("OCR Error:", err); let msg = err.message || "Unknown error";
-        if (msg.includes("502") || msg.includes("Bad Gateway") || msg.includes("<!DOCTYPE")) { resultBox.innerHTML = `<div style="color: #fbbf24; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</div>`; } else if (msg.includes("does not contain relevant patient medical vitals")) { resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-file-circle-xmark"></i> The uploaded document is not relevant. Please upload a valid medical report (JPG, PNG, PDF) containing vitals like Age, Blood Pressure, and Cholesterol.</div>`; } else { resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center;">${msg}</div>`; }
+        console.error("Upload Error:", err); let msg = err.message || "Unknown error";
+        if (msg.includes("502") || msg.includes("Bad Gateway") || msg.includes("<!DOCTYPE")) { 
+          resultBox.innerHTML = `<div style="color: #fbbf24; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-triangle-exclamation"></i> System is updating via GitHub Actions. Please wait 10-15 seconds and try again.</div>`; 
+        } else if (msg.includes("does not appear to be a valid medical report")) { 
+          resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center; font-size: 16px;"><i class="fa-solid fa-file-circle-xmark"></i> <b>Invalid Document:</b> This file does not look like a heart disease report. Please upload a JPG, PNG, or PDF containing medical vitals like Age, Blood Pressure, or Cholesterol.</div>`; 
+        } else { 
+          resultBox.innerHTML = `<div style="color: #f87171; padding: 20px; text-align: center;">${msg}</div>`; 
+        }
       }
     });
   }
@@ -257,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const bpMatch = text.match(/(?:Resting\s*BP|Blood\s*Pressure)[:\s]+(\d+)/i); if (bpMatch) { vitals.RestingBP = parseInt(bpMatch[1]); matches++; }
     const cholMatch = text.match(/Cholesterol[:\s]+(\d+)/i); if (cholMatch) { vitals.Cholesterol = parseInt(cholMatch[1]); matches++; }
     const hrMatch = text.match(/(?:Max\s*HR|Heart\s*Rate)[:\s]+(\d+)/i); if (hrMatch) { vitals.MaxHR = parseInt(hrMatch[1]); matches++; }
-    if (matches < 2) throw new Error("The uploaded report does not contain relevant patient medical vitals.");
+    if (matches < 2) throw new Error("The uploaded report does not contain specific medical vitals like Age, BP, or Cholesterol.");
     return vitals;
   }
 
